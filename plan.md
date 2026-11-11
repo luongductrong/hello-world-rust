@@ -16,14 +16,14 @@
 - [x] Điều khiển luồng: `if` trả về giá trị, `loop`, `while`, `for` với range `1..=10` *(áp dụng `break value;` trong bài tập nhỏ)*
 - [x] **Bài tập kết Chặng 1:** Mini-game Đoán số CLI (gộp `const`, `u32`, `shadowing`, `tuple`, `loop` trả giá trị, `std::io`, `parse`)
 
-## Chặng 2: Trái tim của Rust — Ownership, Borrowing & Slices *(Tiếp theo)*
-- [ ] Stack vs Heap qua cặp đôi `String` và `&str`
-- [ ] Move semantics: vì sao truyền biến vào hàm xong không dùng lại được?
-- [ ] Reference & Borrowing: `&T` (shared) vs `&mut T` (exclusive)
-- [ ] Hiểu và "làm bạn" với thông báo lỗi của Borrow Checker
-- [ ] Slices (`&str`, `&[i32]`)
+## Chặng 2: Trái tim của Rust — Ownership, Borrowing & Slices *(Hoàn thành)*
+- [x] Stack vs Heap qua cặp đôi `String` và `&str`
+- [x] Move semantics: vì sao truyền biến vào hàm xong không dùng lại được?
+- [x] Reference & Borrowing: `&T` (shared) vs `&mut T` (exclusive)
+- [x] Hiểu và "làm bạn" với thông báo lỗi của Borrow Checker
+- [x] Slices (`&str`, `&[i32]`) *(đã thực hành `&str` với `first_word`; `&[T]` sẽ áp dụng cùng `Vec<T>` ở Chặng 4)*
 
-## Chặng 3: Dữ liệu & Trạng thái an toàn — Struct, Enum, Option/Result
+## Chặng 3: Dữ liệu & Trạng thái an toàn — Struct, Enum, Option/Result *(Tiếp theo)*
 - [ ] `struct` + `impl` (methods `&self`, `&mut self`, `self` và `Self::new`)
 - [ ] `enum` mang dữ liệu kèm theo
 - [ ] `Option<T>` (cách Rust thay thế `null`) & `Result<T, E>`

@@ -74,3 +74,40 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
       Err(_) => continue,
   };
   ```
+
+---
+
+### Bài 2: Ownership, Borrowing & Slices ("Trái tim của Rust")
+
+#### 1. Tại sao có Ownership? (So với C & JS/Java)
+- **C:** tự `malloc`/`free` → nhanh nhưng dễ *double free* hoặc *use-after-free*.
+- **JS/Java:** dùng Garbage Collector (GC) → an toàn nhưng tốn RAM/GC pause, nhiều biến cùng trỏ và sửa chung 1 object.
+- **Rust:** **không dùng GC, không `free` tay** — compiler theo dõi chủ sở hữu (Owner) lúc compile và tự chèn `drop()` đúng lúc Owner ra khỏi scope `}`.
+- **3 quy tắc vàng:** (1) Mỗi giá trị có đúng 1 Owner; (2) Cùng lúc chỉ có 1 Owner; (3) Owner hết scope → giá trị tự bị `drop()`.
+
+#### 2. `Copy` (Stack) vs `Move` (Heap) & `Clone`
+- **Kiểu `Copy`** (nằm gọn trên Stack: `i32`, `f64`, `bool`, `char`, tuple toàn kiểu `Copy`): `let y = x;` sẽ sao chép giá trị, cả `x` và `y` đều dùng bình thường.
+- **Kiểu sở hữu Heap** (như `String`, `Vec<T>`):
+  - `let s2 = s1;` **KHÔNG** tạo 2 tham chiếu trỏ chung như JS/Java, mà là **Move** (chuyển quyền sở hữu sang `s2`, vô hiệu hóa `s1` ngay lúc compile để tránh *double free*).
+  - Truyền `String` (không phải `&`) vào hàm cũng làm **Move** quyền sở hữu vào hàm đó; kết thúc hàm biến bị `drop()`.
+  - Muốn nhân bản thật trên Heap (deep copy) phải gọi tường minh `.clone()`: `let s2 = s1.clone();`.
+
+#### 3. References & Borrowing (`&T` vs `&mut T`)
+- **Reference (`&`)** là tham chiếu an toàn (không bao giờ `null`, không bao giờ trỏ vào vùng đã `drop`), giúp hàm **mượn** dữ liệu mà không lấy mất Ownership.
+- **Quy tắc Borrow Checker (chống Data Race lúc compile):**
+  - **`&T` (Shared / Immutable Reference):** Mượn để đọc — **nhiều nơi** có thể cùng giữ `&T` một lúc, không được sửa.
+  - **`&mut T` (Exclusive / Mutable Reference):** Mượn để sửa — tại 1 thời điểm chỉ được tồn tại **duy nhất 1 `&mut T`**, và không ai khác được giữ cả `&T` lẫn `&mut T` cùng lúc.
+- **Non-Lexical Lifetimes (NLL):** Một lần mượn kết thúc ngay tại **dòng cuối cùng mà biến tham chiếu đó còn được sử dụng** (chứ không cần đợi tới dấu `}` cuối block).
+- Khi sửa giá trị nguyên thủy qua `&mut`, dùng toán tử giải tham chiếu `*` (ví dụ `*n += 1;`); khi gọi method (như `s.push_str("!")`), Rust tự động dereference.
+
+#### 4. Slices (`&str` và `&[T]`)
+- **Slice** là tham chiếu tới một **phần liên tiếp** của dữ liệu (chỉ gồm con trỏ + độ dài `len`, không sở hữu Heap).
+- **`&str` vs `&String`:**
+  - `String`: sở hữu chuỗi trên Heap, co giãn được (`push`, `push_str`, `clear`).
+  - `&str`: lát cắt chuỗi chỉ đọc (*string slice*). Luôn ưu tiên nhận `s: &str` cho tham số hàm chỉ đọc vì nó nhận được cả `&String` (nhờ *Deref coercion*), string literal `"abc"`, lẫn đoạn cắt `&s[0..3]`.
+  - Chỉ dùng `&mut String` khi hàm cần thay đổi độ dài/nội dung chuỗi gốc, và trả về `String` khi hàm tạo chuỗi mới.
+- **Tương tự với mảng/Vec:** dùng `&[T]` (ví dụ `nums: &[i32]`) thay vì `&Vec<i32>` để nhận được cả array `[i32; N]`, `Vec<i32>`, lẫn lát cắt `&arr[1..3]`.
+- **Lưu ý UTF-8:** Cắt chuỗi `&s[start..end]` là cắt theo **byte**, nếu cắt giữa chừng một ký tự tiếng Việt/emoji sẽ bị panic! Nên dùng `char_indices()` hoặc `.find(...)` để lấy vị trí byte an toàn.
+- **Expression cuối hàm vs `return` sớm:** Chỉ dùng expression (không `return`, không `;`) ở dòng cuối cùng trả về kết quả của khối/hàm; khi thoát sớm giữa vòng `for` / `loop` (early return), **bắt buộc dùng `return ...;`**.
+- **Hiểu thông báo lỗi `clear()` + slice:** `word` mượn `&sentence` kéo dài tới dòng `println!("{word}")` cuối cùng; nên khi `sentence.clear()` xen vào giữa đòi `&mut sentence`, Borrow Checker báo lỗi **ngay tại dòng `clear()`** vì chính thao tác đòi quyền sửa đó xung đột với lượt mượn đọc đang còn sống.
+

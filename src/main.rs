@@ -1,11 +1,10 @@
 // mod lesson_1;
 // use lesson_1::run;
 
-mod guessing_game;
+// mod guessing_game;
+
+mod lesson_2;
 
 fn main() {
-    // run();
-    // lesson_1::run();
-
-    guessing_game::run();
+    lesson_2::run();
 }
