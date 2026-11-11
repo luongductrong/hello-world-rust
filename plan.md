@@ -1,21 +1,22 @@
 # Lộ trình học Rust qua thực hành (Interactive Roadmap)
 
 > Phương pháp: Học qua **trao đổi + viết code chạy thử ngay**, mỗi khái niệm gắn với tình huống thực tế và thông báo lỗi của compiler. Không đọc sách chay từ đầu đến cuối.
+> Nền tảng đối chiếu: **JavaScript/TypeScript** (mạnh), **Java** (khá), **C** (cơ bản).
 
-## Chặng 0: Bộ công cụ Cargo & Môi trường *(Đang học)*
-- [ ] Xử lý lỗi Windows `os error 4551` (Smart App Control / Developer Mode) để chạy được `cargo run`
-- [ ] Hiểu cấu trúc project Cargo ([`Cargo.toml`](./Cargo.toml), [`Cargo.lock`](./Cargo.lock), [`src/main.rs`](./src/main.rs), `.gitignore`)
-- [ ] Thành thạo vòng lặp lệnh hàng ngày: `cargo check`, `cargo run`, `cargo fmt`, `cargo clippy`, `cargo test`
-- [ ] Tận dụng `rust-analyzer` trong VS Code (inlay hints, quick fix, hover type)
+## Chặng 0: Bộ công cụ Cargo & Môi trường *(Hoàn thành)*
+- [x] Xử lý lỗi Windows `os error 4551` (bật Developer Mode) để chạy được `cargo run`
+- [x] Hiểu cấu trúc project Cargo ([`Cargo.toml`](./Cargo.toml), [`Cargo.lock`](./Cargo.lock), [`src/main.rs`](./src/main.rs), [`.gitignore`](./.gitignore))
+- [x] Nắm quy trình lệnh hàng ngày: `cargo check`, `cargo run`, `cargo fmt`, `cargo clippy` *(riêng `cargo test` sẽ thực hành kỹ ở Chặng 4)*
+- [x] Cài `rust-analyzer` trong VS Code *(sẽ dùng xuyên suốt qua các bài tập)*
 
-## Chặng 1: Cú pháp cốt lõi & Tư duy biểu thức (Expression-oriented)
-- [ ] Biến bất biến mặc định (`let` vs `let mut`) và shadowing
-- [ ] Kiểu dữ liệu cơ bản (`i32`, `u32`, `f64`, `bool`, `char`, tuple, array)
-- [ ] Hàm: statement vs expression (dấu `;` cuối hàm)
-- [ ] Điều khiển luồng: `if` trả về giá trị, `loop`, `while`, `for` với range `1..=10`
-- [ ] **Bài tập nhỏ:** Game đoán số hoặc CLI chuyển đổi đơn vị / tính toán đơn giản
+## Chặng 1: Cú pháp cốt lõi & Tư duy biểu thức (Expression-oriented) *(Hoàn thành)*
+- [x] Biến bất biến mặc định (`let` vs `let mut`, `const`) *(áp dụng shadowing khi đọc & parse input)*
+- [x] Kiểu dữ liệu cơ bản & tràn số (xem chi tiết tại [`data-types.md`](./data-types.md))
+- [x] Hàm: statement vs expression (dấu `;` cuối hàm và block `{ }`)
+- [x] Điều khiển luồng: `if` trả về giá trị, `loop`, `while`, `for` với range `1..=10` *(áp dụng `break value;` trong bài tập nhỏ)*
+- [x] **Bài tập kết Chặng 1:** Mini-game Đoán số CLI (gộp `const`, `u32`, `shadowing`, `tuple`, `loop` trả giá trị, `std::io`, `parse`)
 
-## Chặng 2: Trái tim của Rust — Ownership, Borrowing & Slices
+## Chặng 2: Trái tim của Rust — Ownership, Borrowing & Slices *(Tiếp theo)*
 - [ ] Stack vs Heap qua cặp đôi `String` và `&str`
 - [ ] Move semantics: vì sao truyền biến vào hàm xong không dùng lại được?
 - [ ] Reference & Borrowing: `&T` (shared) vs `&mut T` (exclusive)
