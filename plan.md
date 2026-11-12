@@ -3,6 +3,8 @@
 > Phương pháp: Học qua **trao đổi + viết code chạy thử ngay**, mỗi khái niệm gắn với tình huống thực tế và thông báo lỗi của compiler. Không đọc sách chay từ đầu đến cuối.
 > Nền tảng đối chiếu: **JavaScript/TypeScript** (mạnh), **Java** (khá), **C** (cơ bản).
 
+Tham khảo [**Tương quan giữa Rust và JavaScript/TypeScript**](/rust-vs-js-ts.md)
+
 ## Chặng 0: Bộ công cụ Cargo & Môi trường *(Hoàn thành)*
 - [x] Xử lý lỗi Windows `os error 4551` (bật Developer Mode) để chạy được `cargo run`
 - [x] Hiểu cấu trúc project Cargo ([`Cargo.toml`](./Cargo.toml), [`Cargo.lock`](./Cargo.lock), [`src/main.rs`](./src/main.rs), [`.gitignore`](./.gitignore))
@@ -23,13 +25,15 @@
 - [x] Hiểu và "làm bạn" với thông báo lỗi của Borrow Checker
 - [x] Slices (`&str`, `&[i32]`) *(đã thực hành `&str` với `first_word`; `&[T]` sẽ áp dụng cùng `Vec<T>` ở Chặng 4)*
 
-## Chặng 3: Dữ liệu & Trạng thái an toàn — Struct, Enum, Option/Result *(Tiếp theo)*
-- [ ] `struct` + `impl` (methods `&self`, `&mut self`, `self` và `Self::new`)
-- [ ] `enum` mang dữ liệu kèm theo
-- [ ] `Option<T>` (cách Rust thay thế `null`) & `Result<T, E>`
-- [ ] Pattern matching: `match`, `if let`, `let ... else`
+## Chặng 3: Dữ liệu & Trạng thái an toàn — Struct, Enum, Option/Result *(Hoàn thành)*
+- [x] `struct` + `impl` (methods `&self`, `&mut self`, `self` và `Self::new`)
+- [x] `enum` mang dữ liệu kèm theo
+- [x] Pattern matching: `match`, `if let`, `let ... else`
+- [x] `Option<T>` (cách Rust thay thế `null`)
+- [x] `Result<T, E>` (cách Rust thay thế `try / catch` & Exception)
+- [x] **Bài tổng hợp kết Chặng 3:** Máy bán nước tự động mini ([`src/vending_machine.rs`](./src/vending_machine.rs))
 
-## Chặng 4: Collections, Error Handling & Tổ chức code
+## Chặng 4: Collections, Error Handling & Tổ chức code *(Tiếp theo)*
 - [ ] `Vec<T>`, `HashMap<K, V>`, iterator cơ bản (`.iter()`, `.map()`, `.filter()`)
 - [ ] Xử lý lỗi chuẩn với toán tử `?` (thay cho `.unwrap()`)
 - [ ] Tách module (`mod`, `pub`, `use`)

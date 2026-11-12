@@ -3,8 +3,14 @@
 
 // mod guessing_game;
 
-mod lesson_2;
+// mod lesson_2;
+
+// mod lesson_3;
+
+// mod lesson_3_practice;
+
+mod vending_machine;
 
 fn main() {
-    lesson_2::run();
+    vending_machine::run();
 }

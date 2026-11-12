@@ -111,3 +111,60 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **Expression cuối hàm vs `return` sớm:** Chỉ dùng expression (không `return`, không `;`) ở dòng cuối cùng trả về kết quả của khối/hàm; khi thoát sớm giữa vòng `for` / `loop` (early return), **bắt buộc dùng `return ...;`**.
 - **Hiểu thông báo lỗi `clear()` + slice:** `word` mượn `&sentence` kéo dài tới dòng `println!("{word}")` cuối cùng; nên khi `sentence.clear()` xen vào giữa đòi `&mut sentence`, Borrow Checker báo lỗi **ngay tại dòng `clear()`** vì chính thao tác đòi quyền sửa đó xung đột với lượt mượn đọc đang còn sống.
 
+---
+
+### Bài 3: Struct, Enum, Option/Result & Pattern Matching
+
+#### 1. `struct` & `impl` (Tách dữ liệu khỏi hành vi)
+- Rust **không có `class` và không có kế thừa `extends`**: `struct` chỉ khai báo trường dữ liệu (fields), còn `impl TenStruct { ... }` chứa hàm/method gắn với struct đó.
+- **`#[derive(Debug)]`:** gắn trên `struct` để in nhanh khi debug bằng `{:?}` hoặc `{:#?}` (pretty-print).
+- **3 kiểu viết tắt quen thuộc:**
+  - Field init shorthand: `Task { title, done: false }` (giống `{ title }` trong JS).
+  - Struct update: `Task { done: true, ..task }` (giống `{ ...task, done: true }` — **cẩn thận:** các trường không phải `Copy` như `String` sẽ bị **Move** sang struct mới!).
+  - Nên dùng `String` (thay vì `&str`) trong `struct` để struct tự sở hữu dữ liệu, tránh phải khai báo lifetime phức tạp.
+- **Hàm & Method trong `impl`:**
+  - **Associated function** (không có `self`): giống `static` method/factory trong Java, gọi qua `::` (ví dụ `Task::new(...)` trả về `Self`).
+  - **Method** (có `self` ở tham số đầu, gọi qua `.`):
+    - `&self`: mượn đọc (phổ biến nhất).
+    - `&mut self`: mượn sửa (biến gốc phải là `let mut`).
+    - `self`: **Move** luôn quyền sở hữu vào method (gọi xong biến cũ biến mất).
+- **Partial Move trong `struct`:** Rust theo dõi Ownership tới **từng field riêng lẻ**. Khi dùng `..u1`, các field là `Copy` (như `u8`) vẫn dùng lại được ở `u1`, còn field không `Copy` (như `String`) bị Move sang `u2` làm `u1` rơi vào trạng thái *partially moved* (không dùng lại được cả `u1` hay field đã Move).
+- **Các dạng `struct` khác:** Tuple struct `struct Color(u8, u8, u8);` (đặt tên riêng cho bộ giá trị để tránh truyền nhầm) và Unit-like struct `struct Marker;` (0 bytes).
+
+#### 2. `enum` mang dữ liệu & Pattern Matching (`match`, `if let`, `let ... else`)
+- **`enum` trong Rust ≈ Discriminated Union của TypeScript** (tích hợp sẵn, không cần field `type` thủ công). Một `enum` có thể chứa hỗn hợp 3 loại variant:
+  - Unit variant: `Quit`
+  - Tuple variant: `Write(String)`, `ChangeColor(u8, u8, u8)`
+  - Struct variant: `Move { x: i32, y: i32 }`
+- `enum` cũng viết được `impl TenEnum { ... }` với `&self`, `&mut self`, `self` giống hệt `struct`.
+- **`match` (nâng cấp vượt bậc của `switch`):**
+  - **Không fall-through** (không cần `break`), **bắt buộc bao phủ hết 100% variant** (Exhaustive — thiếu nhánh là lỗi compile), và **là một expression** trả về giá trị.
+  - **Nhánh mặc định:** dùng `other => ...` (có lấy giá trị) hoặc `_ => ...` (bỏ qua, không Move giá trị). Có thể gộp nhánh `1 | 2 => ...`, range `1..=5 => ...`, hoặc kèm điều kiện `if` (*match guard*).
+  - **Bẫy Ownership khi `match`:** `match msg` sẽ Move field bên trong ra ngoài; muốn chỉ đọc phải `match &msg` (biến bóc ra tự thành `&...` nhờ *Match Ergonomics*), muốn sửa dùng `match &mut msg`.
+- **`if let`:** Dùng khi chỉ quan tâm đúng 1 khuôn (thay cho `match` kèm `_ => ()`). Cú pháp: `if let Pattern = value { ... }` (khuôn bên trái, giá trị bên phải).
+- **`let ... else`:** Thoát sớm cực gọn — nếu khớp thì mở biến ra dùng ngay ở scope ngoài, không khớp thì nhánh `else` bắt buộc `return` / `break` / `continue` / `panic!`.
+- **Vì sao bóc `&TaskStatus` lại ra `&String` (chứ không phải `&str`)?** Vì variant `Blocked(String)` chứa `String` bên trong nên khi mượn nguyên enum (`&TaskStatus`), giá trị bóc ra giữ nguyên gốc là `&String` (chỉ khi truyền `&String` vào hàm nhận `&str` mới tự chuyển sang `&str`).
+- **Đổi sang variant khác trong method `&mut self`:** dùng `*self = Self::VariantMoi { ... };` (giải tham chiếu `self` để ghi đè nguyên giá trị enum). Tương tự, khi sửa field số bên trong nhánh `match &mut self` cũng dùng `*field = ...;`.
+
+#### 3. `Option<T>` — Thay thế hoàn toàn `null` / `undefined`
+- Rust **không có `null` hay `undefined`**. Mọi giá trị có thể vắng mặt được gói trong `enum Option<T> { Some(T), None }` (đã nạp sẵn, gõ thẳng `Some(...)` và `None`).
+- `Option<T>` và `T` là **hai kiểu khác nhau** → compiler ép bạn phải mở hộp kiểm tra `None` trước khi xài giá trị, dứt điểm hoàn toàn lỗi `NullPointerException` / `Cannot read properties of undefined`.
+- **Các cách xử lý `Option<T>` hay dùng nhất:**
+  - `match opt { Some(v) => ..., None => ... }`: xử lý đủ 2 nhánh.
+  - `if let Some(v) = opt { ... }` hoặc `let Some(v) = opt else { return; };`: chỉ quan tâm khi có giá trị hoặc thoát sớm.
+  - `.unwrap_or(default)` / `.unwrap_or_else(|| ...)`: lấy giá trị dự phòng nếu là `None` (tương đương toán tử `??` trong JS/TS).
+  - `.as_ref()`: chuyển `Option<String>` → `Option<&String>` để mượn đọc mà không Move dữ liệu bên trong.
+  - `.unwrap()` / `.expect("msg")`: ép mở hộp, gặp `None` sẽ **panic** (chỉ dùng trong test/ví dụ hoặc khi chắc chắn 100% không bao giờ `None`).
+
+#### 4. `Result<T, E>` — Thay thế `try / catch` & Exception
+- Rust **không có `try / catch` và không `throw` exception**. Thao tác có thể thất bại sẽ trả về `enum Result<T, E> { Ok(T), Err(E) }` (`Ok` và `Err` đã nạp sẵn mặc định).
+- Nhìn chữ ký hàm (ví dụ `Result<u8, String>` hay `Result<(), String>`) biết ngay hàm có thể lỗi và lỗi mang thông tin gì; compiler bắt buộc xử lý `Result`.
+- **Phân biệt `Option` vs `Result`:** `Option<T>` dùng khi "không có" là bình thường (tìm không thấy); `Result<T, E>` dùng khi thao tác thất bại và cần biết **lý do lỗi `E`**.
+- **Cách xử lý `Result<T, E>`:**
+  - `match`, `if let Ok(v) = ...`, `let Ok(v) = ... else { return Err(...); }`: giống `Option`.
+  - `.unwrap_or(default)` / `.unwrap_or_else(|err| ...)`: lấy giá trị mặc định (nên dùng `unwrap_or_else` để log lỗi `err`).
+  - `.expect("lý do")` / `.unwrap()`: panic nếu gặp `Err` (ưu tiên `expect` hơn `unwrap` vì có lời nhắn rõ ràng khi crash).
+  - **Toán tử `?`:** Trong hàm cũng trả về `Result` (hoặc `Option`), đặt `?` cuối biểu thức (`let pct = parse_progress(s)?;`) sẽ tự mở hộp `Ok(v)` hoặc `return Err(e)` ngay lập tức nếu gặp lỗi.
+- **Chuyển đổi qua lại:** `Option::ok_or(err)` biến `Option<T>` → `Result<T, E>`; `Result::ok()` biến `Result<T, E>` → `Option<T>` (bỏ chi tiết lỗi).
+- **Disjoint Field Borrowing (mượn tách field):** Nếu gọi qua method trung gian `self.find_drink(id)` trả về `&mut DrinkSlot`, compiler khóa **toàn bộ `self`** theo chữ ký method. Nhưng nếu mượn trực tiếp field `self.slots.iter_mut().find(...)` ngay trong hàm, Rust hiểu bạn chỉ khóa `self.slots` và vẫn cho đọc/sửa các field độc lập như `self.balance`, `self.revenue` bình thường.
+
