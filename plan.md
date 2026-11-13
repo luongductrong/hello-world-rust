@@ -33,11 +33,11 @@ Tham khảo [**Tương quan giữa Rust và JavaScript/TypeScript**](/rust-vs-js
 - [x] `Result<T, E>` (cách Rust thay thế `try / catch` & Exception)
 - [x] **Bài tổng hợp kết Chặng 3:** Máy bán nước tự động mini ([`src/vending_machine.rs`](./src/vending_machine.rs))
 
-## Chặng 4: Collections, Error Handling & Tổ chức code *(Tiếp theo)*
-- [ ] `Vec<T>`, `HashMap<K, V>`, iterator cơ bản (`.iter()`, `.map()`, `.filter()`)
-- [ ] Xử lý lỗi chuẩn với toán tử `?` (thay cho `.unwrap()`)
-- [ ] Tách module (`mod`, `pub`, `use`)
-- [ ] Viết unit test với `#[cfg(test)]` và `cargo test`
+## Chặng 4: Collections, Error Handling & Tổ chức code *(Đang học)*
+- [x] Buổi 4.1: `Vec<T>`, `HashMap<K, V>` & Entry API ([`src/lesson_4_collections.rs`](./src/lesson_4_collections.rs))
+- [x] Buổi 4.2: Closures & Iterators (`.iter()`, `.into_iter()`, `.iter_mut()`, `.map()`, `.filter()`, `.collect()`, `.find()`) ([`src/lesson_4_iterators.rs`](./src/lesson_4_iterators.rs))
+- [ ] Buổi 4.3: Xử lý lỗi nâng cao & Toán tử `?` (thay cho `.unwrap()`)
+- [ ] Buổi 4.4: Tổ chức module (`mod`, `pub`, `use`) & Unit test với `#[cfg(test)]`, `cargo test`
 
 ## Chặng 5: Traits, Generics & Mini-Project tổng hợp
 - [ ] `trait` và `#[derive(Debug, Clone, PartialEq)]`

@@ -168,3 +168,47 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **Chuyển đổi qua lại:** `Option::ok_or(err)` biến `Option<T>` → `Result<T, E>`; `Result::ok()` biến `Result<T, E>` → `Option<T>` (bỏ chi tiết lỗi).
 - **Disjoint Field Borrowing (mượn tách field):** Nếu gọi qua method trung gian `self.find_drink(id)` trả về `&mut DrinkSlot`, compiler khóa **toàn bộ `self`** theo chữ ký method. Nhưng nếu mượn trực tiếp field `self.slots.iter_mut().find(...)` ngay trong hàm, Rust hiểu bạn chỉ khóa `self.slots` và vẫn cho đọc/sửa các field độc lập như `self.balance`, `self.revenue` bình thường.
 
+---
+
+### Bài 4: Collections, Iterators, Test & Error Handling
+
+#### 1. `Vec<T>` (Mảng động trên Heap)
+- Tạo: `Vec::new()`, `Vec::with_capacity(n)`, hoặc `vec![1, 2, 3]`.
+- Thao tác: `.push(x)`, `.pop() -> Option<T>`, `.remove(idx) -> T`, `.len()`, `.is_empty()`. Hàm chỉ đọc nhận slice `&[T]`.
+- **Đọc phần tử:** `&v[i]` sẽ **panic** nếu out-of-bounds; `v.get(i)` trả về **`Option<&T>`** (an toàn tuyệt đối).
+- **2 bẫy Ownership:**
+  - Không Move được phần tử không `Copy` (như `String`) ra bằng `let s = v[0];` (phải mượn `&v[0]` hoặc lấy ra bằng `.remove(0)` / `.pop()`).
+  - Không thể vừa giữ `&v[0]` vừa gọi `v.push(...)` (vì `push` có thể cấp phát lại Heap khiến tham chiếu cũ trỏ vào rác).
+- **3 kiểu duyệt `for`:** `&v` (`&T`), `&mut v` (`&mut T`, sửa bằng `*x = ...`), `v` (Move toàn bộ `v`).
+
+#### 2. `HashMap<K, V>` (`use std::collections::HashMap;`)
+- `insert(k, v)` **Move** `k` và `v` nếu không phải `Copy`. Đọc bằng `.get(&k) -> Option<&V>` (với key `String` truyền thẳng `&str` tra được). Với value kiểu `Copy` có thể dùng `.get(k).copied().unwrap_or(0)`.
+- **Không đảm bảo thứ tự** khi duyệt `for (k, v) in &map`.
+- **Entry API (tra bảng băm 1 lần):**
+  - `map.entry(key).or_insert(default)` trả về `&mut V` — nếu chưa có key thì chèn `default`, rồi sửa trực tiếp qua `*count += 1;`.
+  - Có thể chain `.and_modify(|val| ...).or_insert(init)` để cập nhật khi đã có key hoặc chèn giá trị khởi tạo khi chưa có.
+- **Làm key cho `HashMap`:** Kiểu làm key bắt buộc phải có `#[derive(Hash, PartialEq, Eq)]`. Nếu thêm `Clone, Copy` (như enum đơn giản), ta ném thẳng `key` vào `.entry(key)` mà không sợ bị Move mất biến gốc.
+- **Mental Model để không lú giữa các hàm Collections:**
+  - Tên có `get`, `as_...`: **chỉ mượn** (`&T` hoặc `Option<&T>`), dữ liệu gốc còn nguyên.
+  - Tên có `remove`, `pop`, `into_...`: **lấy đứt (Move)** (`T` hoặc `Option<T>`), rút phần tử ra khỏi collection.
+  - Ngoặc vuông `v[i]`: có thể **panic**; các hàm `.get()`, `.pop()`: **an toàn** (trả `Option`).
+  - `.copied()`: biến `Option<&T>` → `Option<T>` (dùng khi `T` là số/kiểu `Copy`, bỏ con trỏ cho gọn); `.cloned()`: biến `Option<&T>` → `Option<T>` (sao chép Heap khi `T` là `String`).
+
+#### 3. Closures & Iterators (Tư duy Functional & Zero-Cost Abstraction)
+- **Closure:** Hàm ẩn danh (anonymous function), cú pháp `|x| x * 2` (tương đương `(x) => x * 2` trong JS). Nếu nhiều tham số: `|a, b| a + b`. Nếu nhiều dòng: `|x| { let y = x + 1; y * 2 }`.
+- **Iterator trong Rust là "Lazy" (Lười biếng):** Gọi `.map()`, `.filter()` chỉ tạo ra pipeline định nghĩa cách xử lý chứ **chưa chạy ngay**, không sinh mảng trung gian tốn RAM như JS. Chỉ khi gọi các hàm tiêu thụ (*consuming adapter* như `.collect()`, `.sum()`, `.count()`, `.find()`) dữ liệu mới được kéo qua pipeline.
+- **Bộ 3 Iterator theo Ownership:**
+  - `v.iter()` $\to$ duyệt mượn đọc `&T` (mảng gốc giữ nguyên).
+  - `v.iter_mut()` $\to$ duyệt mượn sửa `&mut T` (sửa tại chỗ từng phần tử qua `*item = ...`).
+  - `v.into_iter()` $\to$ duyệt lấy đứt `T` (Move — `v` gốc bị tiêu thụ, không dùng lại được).
+- **Vì sao `.filter()` lại có `&&`?** Vì `filter` chỉ mượn để kiểm tra điều kiện chứ không tiêu thụ phần tử, nên closure của nó luôn nhận thêm một lớp tham chiếu `&Item`. Khi lọc xong, `filter` nhả lại `Item` gốc nguyên vẹn (ví dụ từ `&Order` sang `map` vẫn chỉ là `&Order`).
+- **Các adapter phổ biến:**
+  - `.map(|x| ...)`: biến đổi từng phần tử.
+  - `.filter(|item| ...)`: lọc theo điều kiện (nhận `&item`, trả về `bool`).
+  - `.find(|item| ...)`: tìm phần tử đầu tiên thỏa mãn, trả về `Option<&T>` (dừng ngay khi thấy).
+  - `.sum()`: tính tổng (yêu cầu kiểu phải cộng được).
+  - `.any(|item| ...)` / `.all(|item| ...)`: kiểm tra có ít nhất 1 / tất cả phần tử thỏa mãn (trả về `bool`).
+  - `.flat_map(|x| ...)`: vừa map vừa làm phẳng (flatten) các collection lồng nhau.
+- **`.collect()` & Kỹ thuật Turbofish `::<...>`:**
+  - Gom về `Vec<&str>` không tốn clone: `.map(|item| item.name.as_str()).collect::<Vec<&str>>()`.
+- **Thứ tự của `HashMap`:** Rust dùng thuật toán băm SipHash với random seed (`RandomState`) độc lập cho mỗi instance để chống tấn công HashDoS. Do đó hai `HashMap` chứa cùng phần tử có thể in ra thứ tự khác nhau; muốn giữ thứ tự chèn dùng `indexmap`, muốn sắp xếp dùng `BTreeMap`.
