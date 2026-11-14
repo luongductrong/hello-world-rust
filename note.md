@@ -212,3 +212,40 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **`.collect()` & Kỹ thuật Turbofish `::<...>`:**
   - Gom về `Vec<&str>` không tốn clone: `.map(|item| item.name.as_str()).collect::<Vec<&str>>()`.
 - **Thứ tự của `HashMap`:** Rust dùng thuật toán băm SipHash với random seed (`RandomState`) độc lập cho mỗi instance để chống tấn công HashDoS. Do đó hai `HashMap` chứa cùng phần tử có thể in ra thứ tự khác nhau; muốn giữ thứ tự chèn dùng `indexmap`, muốn sắp xếp dùng `BTreeMap`.
+
+#### 4. Xử lý lỗi chuẩn mực: Custom Error Enum & Toán tử `?`
+- **Không lạm dụng `Result<T, String>` hay `.unwrap()`:** Chuỗi String không thể so khớp lỗi bằng `match` một cách an toàn. Hãy định nghĩa một `enum` chứa các variant lỗi cụ thể (kèm dữ liệu chi tiết).
+- **Toán tử `?` (Try Operator):**
+  - Đặt sau biểu thức trả về `Result`: nếu là `Ok(v)` thì mở hộp lấy `v`; nếu là `Err(e)` thì tự động **`return Err(e.into());`** thoát sớm khỏi hàm cha.
+  - Tương tự với `Option`: `let v = opt?;` nếu `None` sẽ `return None;`.
+  - Điều kiện: Hàm cha phải có kiểu trả về cùng là `Result` (hoặc cùng là `Option`).
+- **Các hàm chuyển đổi lỗi "bỏ túi":**
+  - `Option` $\to$ `Result`: `.ok_or(err)` hoặc `.ok_or_else(|| err)` (dùng closure tiết kiệm RAM khi tạo lỗi).
+  - Đổi kiểu lỗi: `.map_err(|e| MyError::From(e))?`.
+  - `Result` $\to$ `Option`: `.ok()` (biến `Ok(v)` $\to$ `Some(v)`, `Err` $\to$ `None`).
+- **Expression cuối hàm không cần `?`:** Nếu hàm gọi ở dòng cuối cùng đã trả về đúng kiểu `Result` mà hàm cha yêu cầu, không cần `?` mà để nguyên expression không có dấu `;` để trả thẳng về.
+
+#### 5. Tổ chức Module (`mod`, `pub`, `use`) & Unit Test (`cargo test`)
+- **Tư duy Module:** File system trong Rust không tự động import như JS. Mọi file phải được "khai sinh" bằng `mod ten_file;` từ `main.rs` (hoặc module cha).
+- **Tầm nhìn (Visibility):** Mặc định mọi thứ là **private**. Thêm `pub` để công khai; `pub(crate)` để dùng nội bộ trong project.
+- **Unit Test tích hợp sẵn (Zero-dependency):**
+  - Không cần cài thêm thư viện test bên ngoài như Jest/Vitest. Gõ `cargo test` là chạy.
+  - Test nằm ngay cuối file nguồn trong block:
+    ```rust
+    #[cfg(test)]
+    mod tests {
+        use super::*; // Kéo toàn bộ hàm/struct cha vào (kể cả hàm private!)
+
+        #[test]
+        fn test_phep_tinh() {
+            assert_eq!(2 + 2, 4);
+        }
+    }
+    ```
+  - `#[cfg(test)]`: Chỉ biên dịch khi chạy `cargo test`, bản build chính thức `cargo build --release` sẽ tự động loại bỏ sạch sẽ, không tốn 1 byte RAM nào.
+  - Macro kiểm tra: `assert!(cond)`, `assert_eq!(left, right)`, `assert_ne!(left, right)`.
+  - Hàm test có thể trả về `Result<(), E>` để dùng toán tử `?` mượt mà bên trong test.
+  - Vì iterator có thể gom thành nhiều kiểu (`Vec`, `HashMap`, `HashSet`...), compiler cần biết kiểu đích.
+  - Cách 1: Khai báo kiểu ở biến: `let res: Vec<i32> = it.collect();`
+  - Cách 2 (Turbofish): `let res = it.collect::<Vec<_>>();` (dấu `_` để Rust tự suy luận kiểu phần tử bên trong).
+

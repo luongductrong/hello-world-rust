@@ -9,8 +9,9 @@
 // mod vending_machine;
 
 // mod lesson_4_collections;
-mod lesson_4_iterators;
+// mod lesson_4_iterators;
+mod lesson_4_errors;
 
 fn main() {
-    lesson_4_iterators::run();
+    lesson_4_errors::run();
 }
