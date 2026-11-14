@@ -245,7 +245,52 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
   - `#[cfg(test)]`: Chỉ biên dịch khi chạy `cargo test`, bản build chính thức `cargo build --release` sẽ tự động loại bỏ sạch sẽ, không tốn 1 byte RAM nào.
   - Macro kiểm tra: `assert!(cond)`, `assert_eq!(left, right)`, `assert_ne!(left, right)`.
   - Hàm test có thể trả về `Result<(), E>` để dùng toán tử `?` mượt mà bên trong test.
-  - Vì iterator có thể gom thành nhiều kiểu (`Vec`, `HashMap`, `HashSet`...), compiler cần biết kiểu đích.
-  - Cách 1: Khai báo kiểu ở biến: `let res: Vec<i32> = it.collect();`
-  - Cách 2 (Turbofish): `let res = it.collect::<Vec<_>>();` (dấu `_` để Rust tự suy luận kiểu phần tử bên trong).
+
+---
+
+### Bài 5: Traits, Generics & Lập trình Đa hình (Polymorphism)
+
+#### 1. Traits & Cú pháp `impl Trait for Type` (So sánh TS Interface & Java)
+- **Trait là gì?** Định nghĩa một bộ "hợp đồng hành vi" (contract). Giống `interface` trong TS/Java nhưng tách rời hoàn toàn khỏi định nghĩa dữ liệu `struct`.
+- **Cú pháp:**
+  ```rust
+  trait Summary {
+      fn summarize(&self) -> String;
+      // Default method (không bắt buộc struct phải ghi đè):
+      fn preview(&self) -> String {
+          format!("Preview: {}", self.summarize())
+      }
+  }
+
+  impl Summary for Article {
+      fn summarize(&self) -> String { ... }
+  }
+  ```
+- **Orphan Rule (Quy tắc con cừu mồ côi):** Ta chỉ được `impl Trait for Type` khi ít nhất `Trait` hoặc `Type` nằm trong crate của mình (ngăn ngừa xung đột / monkey-patching). Nhưng ta hoàn toàn có thể `impl MyTrait for String` hoặc `impl MyTrait for i32`!
+- **`#[derive(...)]`:** Tự động sinh code cài đặt cho các trait chuẩn phổ biến (`Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Default`).
+- **`Display` vs `Debug`:**
+  - `Debug` (`{:?}`): Dành cho lập trình viên soi ruột object, dùng `#[derive(Debug)]`.
+  - `Display` (`{}`): Dành cho người dùng cuối đọc. **Không thể derive**, bắt buộc phải `impl std::fmt::Display for MyType`. Khi đã `impl Display`, struct tự động được tặng kèm method `.to_string()`.
+- **`From` và `Into`:** Trait chuyển đổi kiểu dữ liệu an toàn. Nếu cài đặt `impl From<A> for B` thì Rust tự động sinh ngược lại `Into<B> for A`. (Toán tử `?` dùng `From`/`Into` để chuyển đổi error types ngầm định).
+
+#### 2. Generics `<T>` & Trait Bounds (Ràng buộc năng lực)
+- **Monomorphization (Đơn hình hóa):** Rust biên dịch Generic thành các hàm mã máy riêng biệt cho từng kiểu cụ thể lúc compile $\to$ **Zero-cost abstraction**, tốc độ chạy nhanh như C, không bị *Type Erasure* hay boxing chậm chạp như Java.
+- **Trait Bounds:** Vì compiler không cho phép thao tác tùy tiện trên `<T>`, ta phải ràng buộc `T` phải có các năng lực (traits) cần thiết:
+  - Cú pháp `impl Trait`: `fn show(item: &impl Display)` (gọn, trực quan).
+  - Cú pháp `<T: Trait>`: `fn cmp<T: PartialEq>(a: &T, b: &T)` (ép `a` và `b` phải cùng kiểu).
+  - Cú pháp `where`: Khi có nhiều trait kết hợp (`+`) hoặc nhiều kiểu generic, đưa xuống cuối cho code trong sáng:
+    ```rust
+    fn process<T, U>(t: &T, u: &U)
+    where
+        T: Display + Clone,
+        U: Debug + PartialEq,
+    { ... }
+    ```
+- **Generic Struct & Conditional Method:** Có thể viết `struct Container<T> { value: T }` và chỉ `impl<T: Display> Container<T>` cấp thêm method riêng cho những kiểu `T` thỏa mãn điều kiện.
+- **Closure Traits (`Fn`, `FnMut`, `FnOnce`):**
+  - Trong Rust, hàm nhận closure làm tham số phải dùng generic kèm trait bound:
+    - `Fn(&T) -> U`: Closure chỉ mượn đọc `&`, gọi nhiều lần an toàn (dùng trong `filter`, `find`).
+    - `FnMut(&mut T) -> U`: Closure có thể mượn sửa `&mut` biến môi trường ngoài, gọi được nhiều lần.
+    - `FnOnce(T) -> U`: Closure Move biến ngoài vào thân hàm, chỉ gọi được **đúng 1 lần** duy nhất.
+
 

@@ -10,8 +10,11 @@
 
 // mod lesson_4_collections;
 // mod lesson_4_iterators;
-mod lesson_4_errors;
+// mod lesson_4_errors;
+
+// mod lesson_5_traits;
+mod lesson_5_generics;
 
 fn main() {
-    lesson_4_errors::run();
+    lesson_5_generics::run();
 }

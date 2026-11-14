@@ -49,7 +49,10 @@ Tham khảo các cẩm nang tra cứu:
 - [x] Buổi 4.3: Xử lý lỗi nâng cao & Toán tử `?` (thay cho `.unwrap()`) ([`src/lesson_4_errors.rs`](./src/lesson_4_errors.rs))
 - [x] Buổi 4.4: Tổ chức module (`mod`, `pub`, `use`) & Unit test với `#[cfg(test)]`, `cargo test` ([`src/lesson_4_errors.rs`](./src/lesson_4_errors.rs))
 
-## Chặng 5: Traits, Generics & Mini-Project tổng hợp *(Tiếp theo)*
-- [ ] `trait` và `#[derive(Debug, Clone, PartialEq)]`
-- [ ] Generics `<T>` và trait bounds cơ bản
-- [ ] **Mini-Project:** Ứng dụng CLI quản lý công việc / chi tiêu (lưu file JSON bằng `serde`, parse tham số dòng lệnh)
+## Chặng 5: Traits, Generics & Mini-Project tổng hợp _(Đang học)_
+
+- [x] Buổi 5.1: Traits cơ bản & Derive (`Display`, `Debug`, `Clone`, `PartialEq`, Default methods) ([`src/lesson_5_traits.rs`](./src/lesson_5_traits.rs))
+- [x] Buổi 5.2: Generics `<T>` & Trait Bounds (`impl Trait`, `where` clause, `T: Display + Clone`) ([`src/lesson_5_generics.rs`](./src/lesson_5_generics.rs))
+- [ ] Buổi 5.3: Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
+- [ ] Buổi 5.3: Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
+- [ ] Buổi 5.4: **Mini-Project Capstone Chặng 5:** Ứng dụng CLI Quản lý chi tiêu/công việc (lưu file JSON với `serde`, parse CLI args)
