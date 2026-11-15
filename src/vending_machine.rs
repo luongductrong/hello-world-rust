@@ -1,3 +1,4 @@
+// LESSON 3
 use std::io::{self, Write};
 
 const PWORD: &str = "aZaZ";

@@ -13,8 +13,9 @@
 // mod lesson_4_errors;
 
 // mod lesson_5_traits;
-mod lesson_5_generics;
+// mod lesson_5_generics;
+mod lesson_5_dispatch;
 
 fn main() {
-    lesson_5_generics::run();
+    lesson_5_dispatch::run();
 }

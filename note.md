@@ -293,4 +293,15 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
     - `FnMut(&mut T) -> U`: Closure có thể mượn sửa `&mut` biến môi trường ngoài, gọi được nhiều lần.
     - `FnOnce(T) -> U`: Closure Move biến ngoài vào thân hàm, chỉ gọi được **đúng 1 lần** duy nhất.
 
+#### 3. Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
+- **Vấn đề kích thước bộ nhớ (Sized):** Rust yêu cầu mọi phần tử trong `Vec<T>` phải có cùng kích thước byte biết trước lúc compile. Các struct khác nhau (`Email`, `Sms`) dù cùng `impl Notification` nhưng có kích thước byte khác nhau nên không thể nhét chung vào `Vec<Notification>`.
+- **Static Dispatch (`impl Trait` hoặc `<T: Trait>`):**
+  - Compiler nhân bản code lúc compile (Monomorphization).
+  - Tốc độ tối đa (zero overhead, inlining), nhưng chỉ nhận **1 kiểu duy nhất** tại mỗi lần gọi.
+- **Dynamic Dispatch (`dyn Trait` & `Box<dyn Trait>`):**
+  - Dành cho danh sách chứa **nhiều kiểu khác nhau** cùng cài đặt 1 Trait (Heterogeneous collection).
+  - Vì kích thước không cố định (*Dynamically Sized Type* - DST), phải bọc sau con trỏ: `&dyn Trait` hoặc `Box<dyn Trait>`.
+  - Con trỏ béo (*Fat pointer*): gồm con trỏ trỏ tới dữ liệu trên Heap + con trỏ trỏ tới bảng ảo (*vtable*) để tìm hàm lúc chạy runtime.
+  - Tương tự như `interface` trong Java/TypeScript hay `virtual` function trong C++.
+
 

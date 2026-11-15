@@ -23,7 +23,7 @@ Tham khảo các cẩm nang tra cứu:
 - [x] Các toán tử, phép tính & so sánh (xem chi tiết tại [`operators.md`](./operators.md))
 - [x] Hàm: statement vs expression (dấu `;` cuối hàm và block `{ }`)
 - [x] Điều khiển luồng: `if` trả về giá trị, `loop`, `while`, `for` với range `1..=10` _(áp dụng `break value;` trong bài tập nhỏ)_
-- [x] **Bài tập kết Chặng 1:** Mini-game Đoán số CLI (gộp `const`, `u32`, `shadowing`, `tuple`, `loop` trả giá trị, `std::io`, `parse`)
+- [x] **Bài tập kết Chặng 1:** Mini-game Đoán số CLI (gộp `const`, `u32`, `shadowing`, `tuple`, `loop` trả giá trị, `std::io`, `parse`) ([`src/guessing_game.rs`](./src/guessing_game.rs))
 
 ## Chặng 2: Trái tim của Rust — Ownership, Borrowing & Slices _(Hoàn thành)_
 
@@ -53,6 +53,6 @@ Tham khảo các cẩm nang tra cứu:
 
 - [x] Buổi 5.1: Traits cơ bản & Derive (`Display`, `Debug`, `Clone`, `PartialEq`, Default methods) ([`src/lesson_5_traits.rs`](./src/lesson_5_traits.rs))
 - [x] Buổi 5.2: Generics `<T>` & Trait Bounds (`impl Trait`, `where` clause, `T: Display + Clone`) ([`src/lesson_5_generics.rs`](./src/lesson_5_generics.rs))
-- [ ] Buổi 5.3: Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
-- [ ] Buổi 5.3: Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
+- [x] Buổi 5.3: Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`) ([`src/lesson_5_dispatch.rs`](./src/lesson_5_dispatch.rs))
+- [ ] Buổi 5.4: **Mini-Project Capstone Chặng 5:** Ứng dụng CLI Quản lý chi tiêu/công việc (lưu file JSON với `serde`, parse CLI args)
 - [ ] Buổi 5.4: **Mini-Project Capstone Chặng 5:** Ứng dụng CLI Quản lý chi tiêu/công việc (lưu file JSON với `serde`, parse CLI args)

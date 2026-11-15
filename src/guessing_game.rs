@@ -1,3 +1,4 @@
+// LESSON 1
 use std::io::{self, Write};
 use std::time::{SystemTime, UNIX_EPOCH};
 
