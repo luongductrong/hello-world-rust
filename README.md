@@ -60,4 +60,37 @@ Tham khảo các cẩm nang tra cứu:
 
 ---
 
+# Lộ trình Nâng cao: Advanced Rust for Tauri & Modern Backend (Tiếp nối)
+
+> **Mục tiêu:** Nắm vững Concurrency, Async Runtime, Quản lý Bộ nhớ & Trạng thái Đa luồng (Shared State), chuẩn bị sẵn sàng kiến trúc cho ứng dụng Desktop (Tauri) và Web Service (Axum/Actix).
+
+## Chặng 6: Chiều sâu Hệ thống Kiểu — Lifetimes & Advanced Traits
+
+- [ ] Buổi 6.1: Cú pháp Lifetime (`'a`), cơ chế mượn liên kết thời gian sống giữa các tham chiếu, Struct chứa tham chiếu (`struct View<'a>`), Anonymous Lifetime (`'_` trong `tauri::State<'_, AppState>`)
+- [ ] Buổi 6.2: Chuỗi tĩnh `'static` lifetime (`&'static str`) vs Trait Bound `T: 'static` (điều kiện tiên quyết để dữ liệu vượt qua biên giới luồng / thread boundaries)
+- [ ] Buổi 6.3: Associated Types (`type Item;`, `type Error;` vs Generics `<T>`) & Trait Object Bounds đa luồng (`dyn Trait + Send + Sync`)
+
+## Chặng 7: Concurrency & Shared State — Đa luồng an toàn (Fearless Concurrency)
+
+- [ ] Buổi 7.1: Tạo OS Thread với `std::thread::spawn` + `move ||`, Marker Traits `Send` & `Sync` (cách Rust bảo đảm an toàn đa luồng ở compile-time, vì sao `Rc` bị chặn qua thread)
+- [ ] Buổi 7.2: Interior Mutability: Sự khác biệt giữa `RefCell` (single-thread) và `Mutex`/`RwLock` (multi-thread)
+- [ ] Buổi 7.3: Pattern chuẩn mực: `Arc<T>`, `Arc<Mutex<T>>` và `Arc<RwLock<T>>` (chia sẻ quyền sở hữu & cập nhật trạng thái chung giữa nhiều luồng đọc/ghi)
+
+## Chặng 8: Chuẩn hóa Xử lý Lỗi Công nghiệp (`thiserror` & `anyhow`)
+
+- [ ] Buổi 8.1: `thiserror` cho tầng Domain/Library logic — macro `#[derive(Error)]`, `#[error("...")]`, tự động hóa `Display` và `std::error::Error` mà không cần viết boilerplate
+- [ ] Buổi 8.2: `anyhow` cho tầng Ứng dụng / API Handler — linh hoạt gom mọi kiểu lỗi với `anyhow::Result<T>`, bổ sung ngữ cảnh với `.context()` và ném lỗi tức thì với `bail!`
+
+## Chặng 9: Asynchronous Programming với Tokio Runtime
+
+- [ ] Buổi 9.1: Tư duy Async Rust: `async fn`, `.await`, bản chất Pull-based/Lazy của trait `Future` (đối chiếu khác biệt triệt để với Eager Promise của JavaScript)
+- [ ] Buổi 9.2: Tokio Runtime & macro `#[tokio::main]`, sinh async task với `tokio::spawn` (green threads) so sánh với OS thread
+- [ ] Buổi 9.3: Quản lý khóa và tác vụ nặng trong Async: `tokio::sync::Mutex` vs `std::sync::Mutex` (cạm bẫy deadlock khi giữ lock qua `.await`), giải phóng blocking I/O với `tokio::task::spawn_blocking`
+
+## Chặng 10: Capstone Project Nâng cao — Hệ thống Quản trị Trạng thái Đa luồng (Tauri / Backend Architecture)
+
+- [ ] Buổi 10.1: Xây dựng State Manager & Background Task Runner: Ứng dụng tích hợp `Arc<RwLock<AppState>>`, chạy background worker bất đồng bộ với Tokio, quản lý lỗi toàn diện bằng `thiserror` & `anyhow` (mô hình chuẩn cho Backend API / Tauri App State)
+
+---
+
 _Assisted-by: **Antigravity** (Gemini 3.8 Flash)_
