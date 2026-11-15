@@ -14,8 +14,9 @@
 
 // mod lesson_5_traits;
 // mod lesson_5_generics;
-mod lesson_5_dispatch;
+// mod lesson_5_dispatch;
+mod todo_list_cli;
 
 fn main() {
-    lesson_5_dispatch::run();
+    todo_list_cli::run();
 }

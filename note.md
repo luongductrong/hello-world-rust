@@ -304,4 +304,20 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
   - Con trỏ béo (*Fat pointer*): gồm con trỏ trỏ tới dữ liệu trên Heap + con trỏ trỏ tới bảng ảo (*vtable*) để tìm hàm lúc chạy runtime.
   - Tương tự như `interface` trong Java/TypeScript hay `virtual` function trong C++.
 
+#### 4. Thư viện ngoài Serde, File I/O & CLI Args (Hệ sinh thái chuẩn công nghiệp)
+- **Cài crate ngoài:** `cargo add serde --features derive` và `cargo add serde_json`.
+- **Serde (Serialize / Deserialize):** Gắn `#[derive(Serialize, Deserialize)]` lên struct/enum.
+  - Object $\to$ JSON String: `serde_json::to_string_pretty(&data) -> Result<String, Error>`
+  - JSON String $\to$ Object: `serde_json::from_str::<T>(&content) -> Result<T, Error>`
+- **Đọc / Ghi file ổ cứng (`std::fs`):**
+  - Đọc chuỗi từ file: `std::fs::read_to_string(path) -> Result<String, std::io::Error>`
+  - Ghi chuỗi ra file: `std::fs::write(path, content) -> Result<(), std::io::Error>`
+  - Kiểm tra file tồn tại: `std::path::Path::new(path).exists()`
+- **Đọc tham số dòng lệnh:**
+  - `let args: Vec<String> = std::env::args().collect();`
+  - `args[0]` là đường dẫn exe, `args[1]` là subcommand (`add`, `list`, `done`...), `args[2]..` là các tham số kèm theo.
+  - Hàm nhận tham chiếu danh sách args nên dùng `args: &[String]` (mượn slice 0 chi phí cấp phát) thay vì cố ép thành `Vec<&str>`.
+- **Phân biệt `let mut x: &T` vs `let x: &mut T`:**
+  - `let task = items.iter_mut().find(...)` trả về `Option<&mut Task>`. Biến `task` ở đây giữ một *tham chiếu có quyền sửa* (`&mut Task`). Bản thân con trỏ `task` không cần gán lại địa chỉ khác nên KHÔNG cần khai báo `let mut task`, ta vẫn sửa được dữ liệu bên trong `task.done = true;` hoàn toàn hợp lệ!
+- **`Option` và `Result` cũng có method `.map()`:** Giống như `Vec`, `opt.map(|s| s.as_str())` biến `Option<String>` thành `Option<&str>` cực kỳ gọn gàng mà không cần `match` cồng kềnh.
 
