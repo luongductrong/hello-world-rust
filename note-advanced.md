@@ -162,3 +162,34 @@
   emit_event(slice); //  LỖI: `local` does not live long enough
   ```
   `local` chỉ sống trong hàm hiện tại, tham chiếu `slice` mang lifetime cục bộ nên không thoả mãn ràng buộc `'static`.
+
+#### 9. Associated Types (`type Item;`) vs Generic Trait (`Trait<T>`)
+
+- **Bản chất khác biệt:**
+  - **Generic Trait (`trait Trait<T>`):** Quan hệ 1-Nhiều. Một kiểu cụ thể có thể `impl Trait<A>`, `impl Trait<B>` nhiều lần (ví dụ `From<T>`).
+  - **Associated Type (`type Item;`):** Quan hệ 1-1. Một kiểu cụ thể khi cài đặt Trait chỉ gắn liền với **duy nhất 1 kiểu đầu ra** (ví dụ `Iterator`, `Worker`). Tránh tình trạng người dùng gọi hàm mơ hồ hoặc không mong muốn.
+- **Lợi ích chữ ký hàm:** Giúp code ngắn gọn gấp đôi:
+  - Generic: `fn run<T, W: Worker<T>>(w: W) -> T` (phải khai báo cả `T` lẫn `W`).
+  - Associated Type: `fn run<W: Worker>(w: W) -> W::Response` (chỉ cần khai báo generic `W`, kiểu kết quả tự đi kèm thông qua `W::Response`).
+
+#### 10. Trait Object Bounds Đa luồng (`dyn Trait + Send + Sync`)
+
+- **Vấn đề ở môi trường đa luồng:** Trong đơn luồng, `Box<dyn Trait>` là đủ. Nhưng khi chuyển giao sang thread khác (`std::thread::spawn` hoặc `tokio::spawn`), compiler sẽ từ chối nếu Trait Object chưa được chứng nhận an toàn luồng.
+- **Cú pháp Trait Object an toàn đa luồng:**
+  ```rust
+  Box<dyn ThreadSafeJob + Send + Sync>
+  ```
+- **Cơ chế Ép kiểu Trait Object (Unsize Coercion):**
+  - Khi truyền `Box<PrintJob>` vào hàm nhận `Box<dyn ThreadSafeJob + Send + Sync>`, Rust **tự động ép kiểu (coerce)** vì kiểu đích của hàm đã được xác định tường minh lúc compile.
+  - Khác với `vec![Box::new(a), Box::new(b)]` trước đây: marco `vec![]` suy luận theo phần tử đầu tiên nên mới cần khai báo kiểu rõ ràng `Vec<Box<dyn Trait>>`.
+
+#### 11. Các kinh nghiệm thực chiến đúc kết từ Buổi 6.3
+
+- **Khai báo Trait có Associated Type:**
+  ```rust
+  trait Worker {
+      type Response;
+      fn perform(&self) -> Self::Response;
+      fn name(&self) -> &str;
+  }
+  ```

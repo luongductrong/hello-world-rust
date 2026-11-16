@@ -17,8 +17,9 @@
 // mod lesson_5_dispatch;
 // mod todo_list_cli;
 
-mod lesson_6_lifetimes;
+// mod lesson_6_lifetimes;
+mod lesson_6_associated_types;
 
 fn main() {
-    lesson_6_lifetimes::run();
+    lesson_6_associated_types::run();
 }
