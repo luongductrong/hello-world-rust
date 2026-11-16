@@ -15,8 +15,10 @@
 // mod lesson_5_traits;
 // mod lesson_5_generics;
 // mod lesson_5_dispatch;
-mod todo_list_cli;
+// mod todo_list_cli;
+
+mod lesson_6_lifetimes;
 
 fn main() {
-    todo_list_cli::run();
+    lesson_6_lifetimes::run();
 }

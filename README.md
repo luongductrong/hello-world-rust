@@ -64,9 +64,13 @@ Tham khảo các cẩm nang tra cứu:
 
 > **Mục tiêu:** Nắm vững Concurrency, Async Runtime, Quản lý Bộ nhớ & Trạng thái Đa luồng (Shared State), chuẩn bị sẵn sàng kiến trúc cho ứng dụng Desktop (Tauri) và Web Service (Axum/Actix).
 
+Tham khảo tài liệu nâng cao:
+
+- [**Sổ tay ghi chép kiến thức Nâng cao**](./note-advanced.md)
+
 ## Chặng 6: Chiều sâu Hệ thống Kiểu — Lifetimes & Advanced Traits
 
-- [ ] Buổi 6.1: Cú pháp Lifetime (`'a`), cơ chế mượn liên kết thời gian sống giữa các tham chiếu, Struct chứa tham chiếu (`struct View<'a>`), Anonymous Lifetime (`'_` trong `tauri::State<'_, AppState>`)
+- [x] Buổi 6.1: Cú pháp Lifetime (`'a`), cơ chế mượn liên kết thời gian sống giữa các tham chiếu, Struct chứa tham chiếu (`struct View<'a>`), Anonymous Lifetime (`'_` trong `tauri::State<'_, AppState>`) ([`src/lesson_6_lifetimes.rs`](./src/lesson_6_lifetimes.rs))
 - [ ] Buổi 6.2: Chuỗi tĩnh `'static` lifetime (`&'static str`) vs Trait Bound `T: 'static` (điều kiện tiên quyết để dữ liệu vượt qua biên giới luồng / thread boundaries)
 - [ ] Buổi 6.3: Associated Types (`type Item;`, `type Error;` vs Generics `<T>`) & Trait Object Bounds đa luồng (`dyn Trait + Send + Sync`)
 

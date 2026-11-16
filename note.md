@@ -80,19 +80,22 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 ### Bài 2: Ownership, Borrowing & Slices ("Trái tim của Rust")
 
 #### 1. Tại sao có Ownership? (So với C & JS/Java)
-- **C:** tự `malloc`/`free` → nhanh nhưng dễ *double free* hoặc *use-after-free*.
+
+- **C:** tự `malloc`/`free` → nhanh nhưng dễ _double free_ hoặc _use-after-free_.
 - **JS/Java:** dùng Garbage Collector (GC) → an toàn nhưng tốn RAM/GC pause, nhiều biến cùng trỏ và sửa chung 1 object.
 - **Rust:** **không dùng GC, không `free` tay** — compiler theo dõi chủ sở hữu (Owner) lúc compile và tự chèn `drop()` đúng lúc Owner ra khỏi scope `}`.
 - **3 quy tắc vàng:** (1) Mỗi giá trị có đúng 1 Owner; (2) Cùng lúc chỉ có 1 Owner; (3) Owner hết scope → giá trị tự bị `drop()`.
 
 #### 2. `Copy` (Stack) vs `Move` (Heap) & `Clone`
+
 - **Kiểu `Copy`** (nằm gọn trên Stack: `i32`, `f64`, `bool`, `char`, tuple toàn kiểu `Copy`): `let y = x;` sẽ sao chép giá trị, cả `x` và `y` đều dùng bình thường.
 - **Kiểu sở hữu Heap** (như `String`, `Vec<T>`):
-  - `let s2 = s1;` **KHÔNG** tạo 2 tham chiếu trỏ chung như JS/Java, mà là **Move** (chuyển quyền sở hữu sang `s2`, vô hiệu hóa `s1` ngay lúc compile để tránh *double free*).
+  - `let s2 = s1;` **KHÔNG** tạo 2 tham chiếu trỏ chung như JS/Java, mà là **Move** (chuyển quyền sở hữu sang `s2`, vô hiệu hóa `s1` ngay lúc compile để tránh _double free_).
   - Truyền `String` (không phải `&`) vào hàm cũng làm **Move** quyền sở hữu vào hàm đó; kết thúc hàm biến bị `drop()`.
   - Muốn nhân bản thật trên Heap (deep copy) phải gọi tường minh `.clone()`: `let s2 = s1.clone();`.
 
 #### 3. References & Borrowing (`&T` vs `&mut T`)
+
 - **Reference (`&`)** là tham chiếu an toàn (không bao giờ `null`, không bao giờ trỏ vào vùng đã `drop`), giúp hàm **mượn** dữ liệu mà không lấy mất Ownership.
 - **Quy tắc Borrow Checker (chống Data Race lúc compile):**
   - **`&T` (Shared / Immutable Reference):** Mượn để đọc — **nhiều nơi** có thể cùng giữ `&T` một lúc, không được sửa.
@@ -101,10 +104,11 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - Khi sửa giá trị nguyên thủy qua `&mut`, dùng toán tử giải tham chiếu `*` (ví dụ `*n += 1;`); khi gọi method (như `s.push_str("!")`), Rust tự động dereference.
 
 #### 4. Slices (`&str` và `&[T]`)
+
 - **Slice** là tham chiếu tới một **phần liên tiếp** của dữ liệu (chỉ gồm con trỏ + độ dài `len`, không sở hữu Heap).
 - **`&str` vs `&String`:**
   - `String`: sở hữu chuỗi trên Heap, co giãn được (`push`, `push_str`, `clear`).
-  - `&str`: lát cắt chuỗi chỉ đọc (*string slice*). Luôn ưu tiên nhận `s: &str` cho tham số hàm chỉ đọc vì nó nhận được cả `&String` (nhờ *Deref coercion*), string literal `"abc"`, lẫn đoạn cắt `&s[0..3]`.
+  - `&str`: lát cắt chuỗi chỉ đọc (_string slice_). Luôn ưu tiên nhận `s: &str` cho tham số hàm chỉ đọc vì nó nhận được cả `&String` (nhờ _Deref coercion_), string literal `"abc"`, lẫn đoạn cắt `&s[0..3]`.
   - Chỉ dùng `&mut String` khi hàm cần thay đổi độ dài/nội dung chuỗi gốc, và trả về `String` khi hàm tạo chuỗi mới.
 - **Tương tự với mảng/Vec:** dùng `&[T]` (ví dụ `nums: &[i32]`) thay vì `&Vec<i32>` để nhận được cả array `[i32; N]`, `Vec<i32>`, lẫn lát cắt `&arr[1..3]`.
 - **Lưu ý UTF-8:** Cắt chuỗi `&s[start..end]` là cắt theo **byte**, nếu cắt giữa chừng một ký tự tiếng Việt/emoji sẽ bị panic! Nên dùng `char_indices()` hoặc `.find(...)` để lấy vị trí byte an toàn.
@@ -116,6 +120,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 ### Bài 3: Struct, Enum, Option/Result & Pattern Matching
 
 #### 1. `struct` & `impl` (Tách dữ liệu khỏi hành vi)
+
 - Rust **không có `class` và không có kế thừa `extends`**: `struct` chỉ khai báo trường dữ liệu (fields), còn `impl TenStruct { ... }` chứa hàm/method gắn với struct đó.
 - **`#[derive(Debug)]`:** gắn trên `struct` để in nhanh khi debug bằng `{:?}` hoặc `{:#?}` (pretty-print).
 - **3 kiểu viết tắt quen thuộc:**
@@ -128,10 +133,11 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
     - `&self`: mượn đọc (phổ biến nhất).
     - `&mut self`: mượn sửa (biến gốc phải là `let mut`).
     - `self`: **Move** luôn quyền sở hữu vào method (gọi xong biến cũ biến mất).
-- **Partial Move trong `struct`:** Rust theo dõi Ownership tới **từng field riêng lẻ**. Khi dùng `..u1`, các field là `Copy` (như `u8`) vẫn dùng lại được ở `u1`, còn field không `Copy` (như `String`) bị Move sang `u2` làm `u1` rơi vào trạng thái *partially moved* (không dùng lại được cả `u1` hay field đã Move).
+- **Partial Move trong `struct`:** Rust theo dõi Ownership tới **từng field riêng lẻ**. Khi dùng `..u1`, các field là `Copy` (như `u8`) vẫn dùng lại được ở `u1`, còn field không `Copy` (như `String`) bị Move sang `u2` làm `u1` rơi vào trạng thái _partially moved_ (không dùng lại được cả `u1` hay field đã Move).
 - **Các dạng `struct` khác:** Tuple struct `struct Color(u8, u8, u8);` (đặt tên riêng cho bộ giá trị để tránh truyền nhầm) và Unit-like struct `struct Marker;` (0 bytes).
 
 #### 2. `enum` mang dữ liệu & Pattern Matching (`match`, `if let`, `let ... else`)
+
 - **`enum` trong Rust ≈ Discriminated Union của TypeScript** (tích hợp sẵn, không cần field `type` thủ công). Một `enum` có thể chứa hỗn hợp 3 loại variant:
   - Unit variant: `Quit`
   - Tuple variant: `Write(String)`, `ChangeColor(u8, u8, u8)`
@@ -139,14 +145,15 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - `enum` cũng viết được `impl TenEnum { ... }` với `&self`, `&mut self`, `self` giống hệt `struct`.
 - **`match` (nâng cấp vượt bậc của `switch`):**
   - **Không fall-through** (không cần `break`), **bắt buộc bao phủ hết 100% variant** (Exhaustive — thiếu nhánh là lỗi compile), và **là một expression** trả về giá trị.
-  - **Nhánh mặc định:** dùng `other => ...` (có lấy giá trị) hoặc `_ => ...` (bỏ qua, không Move giá trị). Có thể gộp nhánh `1 | 2 => ...`, range `1..=5 => ...`, hoặc kèm điều kiện `if` (*match guard*).
-  - **Bẫy Ownership khi `match`:** `match msg` sẽ Move field bên trong ra ngoài; muốn chỉ đọc phải `match &msg` (biến bóc ra tự thành `&...` nhờ *Match Ergonomics*), muốn sửa dùng `match &mut msg`.
+  - **Nhánh mặc định:** dùng `other => ...` (có lấy giá trị) hoặc `_ => ...` (bỏ qua, không Move giá trị). Có thể gộp nhánh `1 | 2 => ...`, range `1..=5 => ...`, hoặc kèm điều kiện `if` (_match guard_).
+  - **Bẫy Ownership khi `match`:** `match msg` sẽ Move field bên trong ra ngoài; muốn chỉ đọc phải `match &msg` (biến bóc ra tự thành `&...` nhờ _Match Ergonomics_), muốn sửa dùng `match &mut msg`.
 - **`if let`:** Dùng khi chỉ quan tâm đúng 1 khuôn (thay cho `match` kèm `_ => ()`). Cú pháp: `if let Pattern = value { ... }` (khuôn bên trái, giá trị bên phải).
 - **`let ... else`:** Thoát sớm cực gọn — nếu khớp thì mở biến ra dùng ngay ở scope ngoài, không khớp thì nhánh `else` bắt buộc `return` / `break` / `continue` / `panic!`.
 - **Vì sao bóc `&TaskStatus` lại ra `&String` (chứ không phải `&str`)?** Vì variant `Blocked(String)` chứa `String` bên trong nên khi mượn nguyên enum (`&TaskStatus`), giá trị bóc ra giữ nguyên gốc là `&String` (chỉ khi truyền `&String` vào hàm nhận `&str` mới tự chuyển sang `&str`).
 - **Đổi sang variant khác trong method `&mut self`:** dùng `*self = Self::VariantMoi { ... };` (giải tham chiếu `self` để ghi đè nguyên giá trị enum). Tương tự, khi sửa field số bên trong nhánh `match &mut self` cũng dùng `*field = ...;`.
 
 #### 3. `Option<T>` — Thay thế hoàn toàn `null` / `undefined`
+
 - Rust **không có `null` hay `undefined`**. Mọi giá trị có thể vắng mặt được gói trong `enum Option<T> { Some(T), None }` (đã nạp sẵn, gõ thẳng `Some(...)` và `None`).
 - `Option<T>` và `T` là **hai kiểu khác nhau** → compiler ép bạn phải mở hộp kiểm tra `None` trước khi xài giá trị, dứt điểm hoàn toàn lỗi `NullPointerException` / `Cannot read properties of undefined`.
 - **Các cách xử lý `Option<T>` hay dùng nhất:**
@@ -157,6 +164,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
   - `.unwrap()` / `.expect("msg")`: ép mở hộp, gặp `None` sẽ **panic** (chỉ dùng trong test/ví dụ hoặc khi chắc chắn 100% không bao giờ `None`).
 
 #### 4. `Result<T, E>` — Thay thế `try / catch` & Exception
+
 - Rust **không có `try / catch` và không `throw` exception**. Thao tác có thể thất bại sẽ trả về `enum Result<T, E> { Ok(T), Err(E) }` (`Ok` và `Err` đã nạp sẵn mặc định).
 - Nhìn chữ ký hàm (ví dụ `Result<u8, String>` hay `Result<(), String>`) biết ngay hàm có thể lỗi và lỗi mang thông tin gì; compiler bắt buộc xử lý `Result`.
 - **Phân biệt `Option` vs `Result`:** `Option<T>` dùng khi "không có" là bình thường (tìm không thấy); `Result<T, E>` dùng khi thao tác thất bại và cần biết **lý do lỗi `E`**.
@@ -173,6 +181,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 ### Bài 4: Collections, Iterators, Test & Error Handling
 
 #### 1. `Vec<T>` (Mảng động trên Heap)
+
 - Tạo: `Vec::new()`, `Vec::with_capacity(n)`, hoặc `vec![1, 2, 3]`.
 - Thao tác: `.push(x)`, `.pop() -> Option<T>`, `.remove(idx) -> T`, `.len()`, `.is_empty()`. Hàm chỉ đọc nhận slice `&[T]`.
 - **Đọc phần tử:** `&v[i]` sẽ **panic** nếu out-of-bounds; `v.get(i)` trả về **`Option<&T>`** (an toàn tuyệt đối).
@@ -182,6 +191,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **3 kiểu duyệt `for`:** `&v` (`&T`), `&mut v` (`&mut T`, sửa bằng `*x = ...`), `v` (Move toàn bộ `v`).
 
 #### 2. `HashMap<K, V>` (`use std::collections::HashMap;`)
+
 - `insert(k, v)` **Move** `k` và `v` nếu không phải `Copy`. Đọc bằng `.get(&k) -> Option<&V>` (với key `String` truyền thẳng `&str` tra được). Với value kiểu `Copy` có thể dùng `.get(k).copied().unwrap_or(0)`.
 - **Không đảm bảo thứ tự** khi duyệt `for (k, v) in &map`.
 - **Entry API (tra bảng băm 1 lần):**
@@ -195,8 +205,9 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
   - `.copied()`: biến `Option<&T>` → `Option<T>` (dùng khi `T` là số/kiểu `Copy`, bỏ con trỏ cho gọn); `.cloned()`: biến `Option<&T>` → `Option<T>` (sao chép Heap khi `T` là `String`).
 
 #### 3. Closures & Iterators (Tư duy Functional & Zero-Cost Abstraction)
+
 - **Closure:** Hàm ẩn danh (anonymous function), cú pháp `|x| x * 2` (tương đương `(x) => x * 2` trong JS). Nếu nhiều tham số: `|a, b| a + b`. Nếu nhiều dòng: `|x| { let y = x + 1; y * 2 }`.
-- **Iterator trong Rust là "Lazy" (Lười biếng):** Gọi `.map()`, `.filter()` chỉ tạo ra pipeline định nghĩa cách xử lý chứ **chưa chạy ngay**, không sinh mảng trung gian tốn RAM như JS. Chỉ khi gọi các hàm tiêu thụ (*consuming adapter* như `.collect()`, `.sum()`, `.count()`, `.find()`) dữ liệu mới được kéo qua pipeline.
+- **Iterator trong Rust là "Lazy" (Lười biếng):** Gọi `.map()`, `.filter()` chỉ tạo ra pipeline định nghĩa cách xử lý chứ **chưa chạy ngay**, không sinh mảng trung gian tốn RAM như JS. Chỉ khi gọi các hàm tiêu thụ (_consuming adapter_ như `.collect()`, `.sum()`, `.count()`, `.find()`) dữ liệu mới được kéo qua pipeline.
 - **Bộ 3 Iterator theo Ownership:**
   - `v.iter()` $\to$ duyệt mượn đọc `&T` (mảng gốc giữ nguyên).
   - `v.iter_mut()` $\to$ duyệt mượn sửa `&mut T` (sửa tại chỗ từng phần tử qua `*item = ...`).
@@ -214,6 +225,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **Thứ tự của `HashMap`:** Rust dùng thuật toán băm SipHash với random seed (`RandomState`) độc lập cho mỗi instance để chống tấn công HashDoS. Do đó hai `HashMap` chứa cùng phần tử có thể in ra thứ tự khác nhau; muốn giữ thứ tự chèn dùng `indexmap`, muốn sắp xếp dùng `BTreeMap`.
 
 #### 4. Xử lý lỗi chuẩn mực: Custom Error Enum & Toán tử `?`
+
 - **Không lạm dụng `Result<T, String>` hay `.unwrap()`:** Chuỗi String không thể so khớp lỗi bằng `match` một cách an toàn. Hãy định nghĩa một `enum` chứa các variant lỗi cụ thể (kèm dữ liệu chi tiết).
 - **Toán tử `?` (Try Operator):**
   - Đặt sau biểu thức trả về `Result`: nếu là `Ok(v)` thì mở hộp lấy `v`; nếu là `Err(e)` thì tự động **`return Err(e.into());`** thoát sớm khỏi hàm cha.
@@ -226,11 +238,13 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **Expression cuối hàm không cần `?`:** Nếu hàm gọi ở dòng cuối cùng đã trả về đúng kiểu `Result` mà hàm cha yêu cầu, không cần `?` mà để nguyên expression không có dấu `;` để trả thẳng về.
 
 #### 5. Tổ chức Module (`mod`, `pub`, `use`) & Unit Test (`cargo test`)
+
 - **Tư duy Module:** File system trong Rust không tự động import như JS. Mọi file phải được "khai sinh" bằng `mod ten_file;` từ `main.rs` (hoặc module cha).
 - **Tầm nhìn (Visibility):** Mặc định mọi thứ là **private**. Thêm `pub` để công khai; `pub(crate)` để dùng nội bộ trong project.
 - **Unit Test tích hợp sẵn (Zero-dependency):**
   - Không cần cài thêm thư viện test bên ngoài như Jest/Vitest. Gõ `cargo test` là chạy.
   - Test nằm ngay cuối file nguồn trong block:
+
     ```rust
     #[cfg(test)]
     mod tests {
@@ -242,6 +256,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
         }
     }
     ```
+
   - `#[cfg(test)]`: Chỉ biên dịch khi chạy `cargo test`, bản build chính thức `cargo build --release` sẽ tự động loại bỏ sạch sẽ, không tốn 1 byte RAM nào.
   - Macro kiểm tra: `assert!(cond)`, `assert_eq!(left, right)`, `assert_ne!(left, right)`.
   - Hàm test có thể trả về `Result<(), E>` để dùng toán tử `?` mượt mà bên trong test.
@@ -251,8 +266,10 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 ### Bài 5: Traits, Generics & Lập trình Đa hình (Polymorphism)
 
 #### 1. Traits & Cú pháp `impl Trait for Type` (So sánh TS Interface & Java)
+
 - **Trait là gì?** Định nghĩa một bộ "hợp đồng hành vi" (contract). Giống `interface` trong TS/Java nhưng tách rời hoàn toàn khỏi định nghĩa dữ liệu `struct`.
 - **Cú pháp:**
+
   ```rust
   trait Summary {
       fn summarize(&self) -> String;
@@ -266,6 +283,7 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
       fn summarize(&self) -> String { ... }
   }
   ```
+
 - **Orphan Rule (Quy tắc con cừu mồ côi):** Ta chỉ được `impl Trait for Type` khi ít nhất `Trait` hoặc `Type` nằm trong crate của mình (ngăn ngừa xung đột / monkey-patching). Nhưng ta hoàn toàn có thể `impl MyTrait for String` hoặc `impl MyTrait for i32`!
 - **`#[derive(...)]`:** Tự động sinh code cài đặt cho các trait chuẩn phổ biến (`Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`, `Default`).
 - **`Display` vs `Debug`:**
@@ -274,7 +292,8 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
 - **`From` và `Into`:** Trait chuyển đổi kiểu dữ liệu an toàn. Nếu cài đặt `impl From<A> for B` thì Rust tự động sinh ngược lại `Into<B> for A`. (Toán tử `?` dùng `From`/`Into` để chuyển đổi error types ngầm định).
 
 #### 2. Generics `<T>` & Trait Bounds (Ràng buộc năng lực)
-- **Monomorphization (Đơn hình hóa):** Rust biên dịch Generic thành các hàm mã máy riêng biệt cho từng kiểu cụ thể lúc compile $\to$ **Zero-cost abstraction**, tốc độ chạy nhanh như C, không bị *Type Erasure* hay boxing chậm chạp như Java.
+
+- **Monomorphization (Đơn hình hóa):** Rust biên dịch Generic thành các hàm mã máy riêng biệt cho từng kiểu cụ thể lúc compile $\to$ **Zero-cost abstraction**, tốc độ chạy nhanh như C, không bị _Type Erasure_ hay boxing chậm chạp như Java.
 - **Trait Bounds:** Vì compiler không cho phép thao tác tùy tiện trên `<T>`, ta phải ràng buộc `T` phải có các năng lực (traits) cần thiết:
   - Cú pháp `impl Trait`: `fn show(item: &impl Display)` (gọn, trực quan).
   - Cú pháp `<T: Trait>`: `fn cmp<T: PartialEq>(a: &T, b: &T)` (ép `a` và `b` phải cùng kiểu).
@@ -294,17 +313,19 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
     - `FnOnce(T) -> U`: Closure Move biến ngoài vào thân hàm, chỉ gọi được **đúng 1 lần** duy nhất.
 
 #### 3. Static Dispatch (`impl Trait`) vs Dynamic Dispatch (`Box<dyn Trait>`)
+
 - **Vấn đề kích thước bộ nhớ (Sized):** Rust yêu cầu mọi phần tử trong `Vec<T>` phải có cùng kích thước byte biết trước lúc compile. Các struct khác nhau (`Email`, `Sms`) dù cùng `impl Notification` nhưng có kích thước byte khác nhau nên không thể nhét chung vào `Vec<Notification>`.
 - **Static Dispatch (`impl Trait` hoặc `<T: Trait>`):**
   - Compiler nhân bản code lúc compile (Monomorphization).
   - Tốc độ tối đa (zero overhead, inlining), nhưng chỉ nhận **1 kiểu duy nhất** tại mỗi lần gọi.
 - **Dynamic Dispatch (`dyn Trait` & `Box<dyn Trait>`):**
   - Dành cho danh sách chứa **nhiều kiểu khác nhau** cùng cài đặt 1 Trait (Heterogeneous collection).
-  - Vì kích thước không cố định (*Dynamically Sized Type* - DST), phải bọc sau con trỏ: `&dyn Trait` hoặc `Box<dyn Trait>`.
-  - Con trỏ béo (*Fat pointer*): gồm con trỏ trỏ tới dữ liệu trên Heap + con trỏ trỏ tới bảng ảo (*vtable*) để tìm hàm lúc chạy runtime.
+  - Vì kích thước không cố định (_Dynamically Sized Type_ - DST), phải bọc sau con trỏ: `&dyn Trait` hoặc `Box<dyn Trait>`.
+  - Con trỏ béo (_Fat pointer_): gồm con trỏ trỏ tới dữ liệu trên Heap + con trỏ trỏ tới bảng ảo (_vtable_) để tìm hàm lúc chạy runtime.
   - Tương tự như `interface` trong Java/TypeScript hay `virtual` function trong C++.
 
 #### 4. Thư viện ngoài Serde, File I/O & CLI Args (Hệ sinh thái chuẩn công nghiệp)
+
 - **Cài crate ngoài:** `cargo add serde --features derive` và `cargo add serde_json`.
 - **Serde (Serialize / Deserialize):** Gắn `#[derive(Serialize, Deserialize)]` lên struct/enum.
   - Object $\to$ JSON String: `serde_json::to_string_pretty(&data) -> Result<String, Error>`
@@ -318,6 +339,9 @@ Gõ code (nhìn gợi ý/báo đỏ từ `rust-analyzer`) → Lưu (`Ctrl + S` t
   - `args[0]` là đường dẫn exe, `args[1]` là subcommand (`add`, `list`, `done`...), `args[2]..` là các tham số kèm theo.
   - Hàm nhận tham chiếu danh sách args nên dùng `args: &[String]` (mượn slice 0 chi phí cấp phát) thay vì cố ép thành `Vec<&str>`.
 - **Phân biệt `let mut x: &T` vs `let x: &mut T`:**
-  - `let task = items.iter_mut().find(...)` trả về `Option<&mut Task>`. Biến `task` ở đây giữ một *tham chiếu có quyền sửa* (`&mut Task`). Bản thân con trỏ `task` không cần gán lại địa chỉ khác nên KHÔNG cần khai báo `let mut task`, ta vẫn sửa được dữ liệu bên trong `task.done = true;` hoàn toàn hợp lệ!
+  - `let task = items.iter_mut().find(...)` trả về `Option<&mut Task>`. Biến `task` ở đây giữ một _tham chiếu có quyền sửa_ (`&mut Task`). Bản thân con trỏ `task` không cần gán lại địa chỉ khác nên KHÔNG cần khai báo `let mut task`, ta vẫn sửa được dữ liệu bên trong `task.done = true;` hoàn toàn hợp lệ!
 - **`Option` và `Result` cũng có method `.map()`:** Giống như `Vec`, `opt.map(|s| s.as_str())` biến `Option<String>` thành `Option<&str>` cực kỳ gọn gàng mà không cần `match` cồng kềnh.
 
+---
+
+**Tiếp tục học phần nâng cao:** Xem [**Sổ tay ghi chép kiến thức Nâng cao (note-advanced.md)**](./note-advanced.md)
