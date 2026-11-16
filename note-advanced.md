@@ -116,7 +116,49 @@
       view = parse_command(&temp).unwrap();
   } // <-- `temp` bị DROP và thu hồi bộ nhớ tại đây!
 
-  println!("{:?}", view); // ❌ COMPILE ERROR: `temp` does not live long enough!
+  println!("{:?}", view); //  COMPILE ERROR: `temp` does not live long enough!
   ```
 
   Biến `view` được khai báo ngoài scope, nhưng dữ liệu mà nó mượn (`temp`) lại chết bên trong scope con. Rust phát hiện ra ngay lúc compile và ngăn chặn hoàn toàn lỗi _Use-after-free_!
+
+#### 6. Phân biệt `'static` Lifetime (`&'static str`) vs Trait Bound `T: 'static`
+
+- **Bản chất 2 ngữ cảnh của từ khóa `'static`:**
+  - **Lifetime của tham chiếu (`&'static T`):** Vùng nhớ mà tham chiếu trỏ tới tồn tại vĩnh viễn trong suốt thời gian chạy của app (thường nằm ở phân vùng tĩnh của file binary `.exe` như `"HELLO"`).
+  - **Trait Bound trên kiểu (`T: 'static`):** **KHÔNG** bắt buộc `T` phải sống mãi mãi! Nó chỉ khẳng định: Kiểu `T` là kiểu **tự sở hữu toàn bộ dữ liệu** (Owned type) hoặc chỉ chứa tham chiếu `'static`, **hoàn toàn không mượn bất kỳ tham chiếu ngắn hạn nào**.
+- **So sánh các kiểu dữ liệu với `T: 'static`:**
+  - `i32`, `bool`, `f64` $\to$ **Thoả mãn** (tự lưu trên stack).
+  - `String`, `Vec<u8>`, struct tự sở hữu $\to$ **Thoả mãn** (tự quản lý bộ nhớ heap riêng, khi chuyển giao quyền sở hữu không phụ thuộc vào scope nào).
+  - `&'static str` $\to$ **Thoả mãn** (tham chiếu sống vĩnh cửu).
+  - `&'a str`, `&'a i32`, struct chứa `&'a ...` $\to$ **KHÔNG thoả mãn** (mượn từ nơi khác, nguy cơ bị dangling pointer khi luồng cha bị giải phóng).
+- **Ý nghĩa với Đa luồng & Async:**
+  Hàm `std::thread::spawn` hoặc `tokio::spawn` ép kiểu gửi sang thread mới phải thoả mãn `T: 'static + Send`. Luồng con có thể sống lâu hơn luồng cha, nếu cho phép truyền tham chiếu mượn ngắn hạn từ luồng cha sang, luồng cha chết sẽ làm luồng con trỏ vào vùng nhớ rác gây crash.
+
+#### 7. Khi nào cần dùng `Box::leak` (Ứng dụng thực tế)
+
+- **Tại sao cần `Box::leak` khi `String` vốn dĩ đã thoả mãn `T: 'static`?**
+  - **Trường hợp 1 (Third-party Crate / Framework):** Rất nhiều thư viện (như Logger, Metrics Prometheus, OpenTelemetry) thiết kế hàm nhận cứng `&'static str` (thay vì nhận generic `T` hay `String`) để tối ưu zero-allocation. Khi dữ liệu chuỗi được đọc từ file config lúc runtime (`String`), cách duy nhất để chuyển vào là dùng `Box::leak(s.into_boxed_str())`.
+  - **Trường hợp 2 (Global Read-Only Config):** Đọc file cấu hình 50MB lúc app khởi động, muốn hàng trăm thread đọc song song với tốc độ con trỏ thô cao nhất mà không cần tranh chấp khóa lock (`Mutex`/`RwLock`) hay bọc `Arc`. Dùng `Box::leak` biến nó thành tham chiếu `'static` toàn cục.
+  - **Trường hợp 3 (FFI / Foreign Function Interface):** Chuyển con trỏ chuỗi từ Rust sang C engine / WebAssembly / iOS native code mà không bị Rust tự động drop khi hàm Rust kết thúc.
+
+#### 8. Các kinh nghiệm thực chiến đúc kết từ Buổi 6.2
+
+- **Chữ ký hàm generic nhận `T: 'static`:**
+  ```rust
+  fn emit_event<T>(event: T)
+  where
+      T: std::fmt::Debug + Display + 'static,
+  {
+      let type_name = std::any::type_name::<T>();
+      println!("Type name: {type_name} - Value: {event}");
+  }
+  ```
+- **Thao tác leak chuỗi:**
+  `Box::leak(string.into_boxed_str()) -> &'static str`: Cố ý "quên" việc thu hồi bộ nhớ heap của chuỗi đó, đổi lại ta nhận được một tham chiếu tĩnh sống vĩnh viễn suốt phiên chạy của ứng dụng.
+- **`slice` mượn từ biến cục bộ bị compiler chặn ngay:**
+  ```rust
+  let local = String::from("local");
+  let slice: &str = &local;
+  emit_event(slice); //  LỖI: `local` does not live long enough
+  ```
+  `local` chỉ sống trong hàm hiện tại, tham chiếu `slice` mang lifetime cục bộ nên không thoả mãn ràng buộc `'static`.

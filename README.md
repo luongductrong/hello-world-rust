@@ -71,7 +71,7 @@ Tham khảo tài liệu nâng cao:
 ## Chặng 6: Chiều sâu Hệ thống Kiểu — Lifetimes & Advanced Traits
 
 - [x] Buổi 6.1: Cú pháp Lifetime (`'a`), cơ chế mượn liên kết thời gian sống giữa các tham chiếu, Struct chứa tham chiếu (`struct View<'a>`), Anonymous Lifetime (`'_` trong `tauri::State<'_, AppState>`) ([`src/lesson_6_lifetimes.rs`](./src/lesson_6_lifetimes.rs))
-- [ ] Buổi 6.2: Chuỗi tĩnh `'static` lifetime (`&'static str`) vs Trait Bound `T: 'static` (điều kiện tiên quyết để dữ liệu vượt qua biên giới luồng / thread boundaries)
+- [x] Buổi 6.2: Chuỗi tĩnh `'static` lifetime (`&'static str`) vs Trait Bound `T: 'static` (điều kiện tiên quyết để dữ liệu vượt qua biên giới luồng / thread boundaries) ([`src/lesson_6_lifetimes.rs`](./src/lesson_6_lifetimes.rs))
 - [ ] Buổi 6.3: Associated Types (`type Item;`, `type Error;` vs Generics `<T>`) & Trait Object Bounds đa luồng (`dyn Trait + Send + Sync`)
 
 ## Chặng 7: Concurrency & Shared State — Đa luồng an toàn (Fearless Concurrency)

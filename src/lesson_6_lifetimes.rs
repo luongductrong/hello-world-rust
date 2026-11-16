@@ -38,6 +38,23 @@ pub fn run() {
     // print_command(&com_temp); // BORROW CHECKER VẢ NGAY LẬP TỨC:
     // `temp` does not live long enough
     // `temp` dropped here while still borrowed
+
+    // 6.2
+    emit_event(100_i32);
+    emit_event(String::from("User logged in"));
+    emit_event("SYSTEM_READY");
+
+    // Angering the compiler
+    let local = String::from("local");
+    // let slice: &str = &local;
+
+    // local` does not live long enough
+    // borrowed value does not live long enoughrustcClick for full compiler diagnostic
+
+    // emit_event(slice);
+
+    let boxed = leak_runtime_string(local);
+    emit_event(boxed);
 }
 
 #[derive(Debug)]
@@ -97,4 +114,16 @@ fn pick_longer_payload<'a>(cm1: &CommandView<'a>, cm2: &CommandView<'a>) -> Opti
 
 fn print_command(command: &CommandView<'_>) {
     println!("{command}");
+}
+
+fn emit_event<T>(event: T)
+where
+    T: std::fmt::Debug + Display + 'static,
+{
+    let type_name = std::any::type_name::<T>();
+    println!("Type name: {type_name} - Value: {event}");
+}
+
+fn leak_runtime_string(string: String) -> &'static str {
+    Box::leak(string.into_boxed_str())
 }
