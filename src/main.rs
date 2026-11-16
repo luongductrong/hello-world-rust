@@ -21,8 +21,9 @@
 // mod lesson_6_associated_types;
 
 // mod lesson_7_threads;
-mod lesson_7_interior_mutability;
+// mod lesson_7_interior_mutability;
+mod lesson_7_shared_state;
 
 fn main() {
-    lesson_7_interior_mutability::run();
+    lesson_7_shared_state::run();
 }

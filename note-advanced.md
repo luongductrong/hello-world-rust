@@ -299,3 +299,31 @@
 - **Mẫu hình cập nhật an toàn với `Mutex` và `RwLock`:**
   - `Mutex`: `*self.request_count.lock().unwrap() += 1;`
   - `RwLock`: `*self.theme.write().unwrap() = new_theme.to_string();`
+
+#### 10. Pattern chuẩn mực `Arc<Mutex<T>>` & `Arc<RwLock<T>>` (Mô hình App State)
+
+- **Tại sao phải ghép đôi `Arc` với `Mutex`/`RwLock`?**
+  - Một mình `Mutex<T>`: Bảo vệ dữ liệu không bị data race, nhưng **không thể chia sẻ quyền sở hữu** sang nhiều thread (luật move ownership chỉ cho đi 1 lần).
+  - Một mình `Arc<T>`: Cho phép **đa sở hữu (multi-ownership)** giữa nhiều thread, nhưng chỉ cấp quyền **mượn đọc bất biến (`&T`)**, không ai được sửa dữ liệu.
+  - **Ghép đôi `Arc<Mutex<T>>` / `Arc<RwLock<T>>`:** Tạo nên mô hình quản trị App State hoàn hảo. `Arc` cấp quyền truy cập vùng nhớ Heap cho nhiều luồng, `Mutex`/`RwLock` kiểm soát việc đọc/ghi an toàn.
+- **Ứng dụng thực tế:** Đây là kiến trúc chuẩn mực của `tauri::State` trong Tauri và `axum::extract::State` trong backend Axum.
+
+#### 11. Bộ đếm tham chiếu `Arc::clone` vs `Arc::strong_count`
+
+- **`Arc::clone(&state)`:**
+  - Không hề nhân bản dữ liệu thật trên Heap.
+  - Chỉ thực hiện phép toán nguyên tử cấp CPU (*Atomic increment*) tăng bộ đếm lên `+1` và tạo ra một con trỏ thông minh mới trỏ tới cùng vùng nhớ. Chi phí cực kỳ nhẹ (chỉ vài nano-giây).
+  - Khi một thread hoàn thành, biến clone trong thread đó bị drop $\to$ bộ đếm tự động `-1`.
+  - Khi bộ đếm về `0` $\to$ bộ nhớ Heap tự động được giải phóng hoàn toàn.
+- **`Arc::strong_count(&state)`:**
+  - Trả về số lượng tham chiếu đang cùng sở hữu vùng nhớ này.
+  - Giúp giám sát vòng đời bộ nhớ: kiểm tra ban đầu là `1`, tăng lên theo số thread đang chạy, và trở về đúng `1` khi toàn bộ các thread con đã `.join()`.
+
+#### 12. Các kinh nghiệm thực chiến đúc kết từ Buổi 7.3
+
+- **Quy tắc vàng "Clone trước khi spawn":**
+  Luôn gọi `let state_clone = Arc::clone(&shared_state);` ngay trước khi gọi `std::thread::spawn(move || ...)`.
+- **An toàn tuyệt đối trong điều kiện tranh chấp cao (High-concurrency):**
+  Dù các giao dịch nạp và rút tiền từ 10 OS threads chạy xen kẽ bất định do Hệ điều hành lập lịch, dữ liệu số dư và danh sách lịch sử giao dịch không hề bị sai lệch hay mất mát dù chỉ 1 đồng.
+- **Cơ chế Poisoned Mutex (`PoisonError`):**
+  Lý do ta luôn gọi `.lock().unwrap()`: Nếu một thread trước đó đang cầm lock mà bị `panic!`, Mutex sẽ bị đánh dấu là "nhiễm độc". Các thread sau gọi `.lock()` sẽ nhận về `Err(PoisonError)` để tránh tiếp tục thao tác trên dữ liệu đã bị lỗi dở dang.
