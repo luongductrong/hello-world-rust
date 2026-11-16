@@ -193,3 +193,71 @@
       fn name(&self) -> &str;
   }
   ```
+
+---
+
+### Bài 7: Concurrency & Shared State — Đa luồng an toàn (Fearless Concurrency)
+
+#### 1. OS Thread (`std::thread::spawn`), `move ||` & Cơ chế hoạt động
+
+- **OS Thread thực thụ:** `std::thread::spawn` tạo một Kernel Thread do Hệ điều hành quản lý, thực thi song song trên các core CPU vật lý.
+- **`JoinHandle<T>`:**
+  - Kết quả trả về của `spawn`: `let handle = std::thread::spawn(...)`.
+  - Gọi `handle.join().unwrap()` để tạm dừng thread hiện tại (blocking wait) chờ thread con hoàn thành và nhận kết quả trả về `T`.
+  - Nếu không gọi `.join()`, khi main thread kết thúc, tiến trình (process) sẽ thoát ngay lập tức và khai tử toàn bộ thread con dù chưa chạy xong.
+- **Bắt buộc dùng `move ||`:**
+  - Vì thread mới có thể sống lâu hơn thread cha sinh ra nó, hàm `std::thread::spawn` đòi hỏi closure phải thoả mãn trait bound `'static`.
+  - Từ khóa `move` ép closure chuyển giao toàn bộ quyền sở hữu (ownership) của các biến vào trong thread, không mượn tham chiếu ngắn hạn từ thread cha.
+
+#### 2. Marker Traits: `Send` và `Sync` (Bí mật phòng chống Data Race lúc compile)
+
+- **`T: Send` (Chuyển giao quyền sở hữu an toàn):**
+  - Cho phép chuyển `T` từ thread này sang thread khác.
+  - Hầu hết các kiểu trong Rust đều là `Send` (`i32`, `String`, `Vec<T>`).
+  - **Kiểu KHÔNG `Send`:** `Rc<T>` (vì bộ đếm tham chiếu dùng phép toán số học thông thường `count += 1`, nếu 2 thread cùng tăng sẽ gây Data Race làm hỏng bộ nhớ Heap). Compiler lập tức chặn: `the trait Send is not implemented for Rc<String>`.
+- **`T: Sync` (Chia sẻ tham chiếu đồng thời an toàn):**
+  - Cho phép nhiều thread cùng mượn đọc `&T` đồng thời.
+  - Định lý Rust: `T: Sync` $\iff$ `&T: Send`.
+  - `RefCell<T>` KHÔNG phải là `Sync` vì cơ chế mượn động lúc runtime không an toàn đa luồng. `Mutex<T>` và `RwLock<T>` là `Sync`.
+- **Auto Traits:** Compiler tự động suy luận `Send` và `Sync` dựa trên các trường bên trong struct, không cần lập trình viên tự tay implement.
+
+#### 3. Phân biệt Thread vs Process & Tối ưu bộ nhớ
+
+- **Thread vs Process:**
+  - Nhiều threads chạy chung trong **cùng 1 tiến trình (process)**, chia sẻ cùng không gian địa chỉ ảo (Virtual Address Space), Heap và tài nguyên hệ thống.
+  - Tạo thread mới KHÔNG sinh ra process mới.
+
+#### 4. Toolbox: Khởi tạo nhanh Vec & Cắt Chunks
+
+- **Tạo nhanh `Vec` từ Range:**
+  ```rust
+  let data: Vec<u64> = (1..=100_000).collect();
+  // hoặc dùng cú pháp turbofish / type inference:
+  let data = (1_u64..=100_000).collect::<Vec<_>>();
+  ```
+- **Chia mảng thành các phần bằng nhau với `.chunks(size)`:**
+
+  ```rust
+  let chunks: Vec<&[u64]> = data.chunks(25_000).collect();
+  ```
+
+  - `data.chunks(n)` trả về một iterator các slice mượn `&[T]`, mỗi slice có tối đa `n` phần tử.
+  - Để chuyển quyền sở hữu cho từng thread: `chunk.to_vec()` (nhân bản lát cắt thành một `Vec<T>` độc lập trên heap).
+
+#### 5. Các kinh nghiệm thực chiến đúc kết từ Buổi 7.1
+
+- **Thu thập Handles & Gom kết quả:**
+
+  ```rust
+  let mut handles = Vec::new();
+  for (id, chunk) in chunks.iter().enumerate() {
+      let own_chunk = chunk.to_vec();
+      let handle = std::thread::spawn(move || process_chunk(id + 1, own_chunk));
+      handles.push(handle);
+  }
+
+  let total: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();
+  ```
+
+- **Thứ tự hoàn thành bất định (Non-deterministic completion):**
+  Các worker in log hoàn thành không theo thứ tự 1, 2, 3, 4 vì Hệ điều hành (OS Scheduler) điều phối các thread chạy song song độc lập trên các CPU core khác nhau.

@@ -18,8 +18,10 @@
 // mod todo_list_cli;
 
 // mod lesson_6_lifetimes;
-mod lesson_6_associated_types;
+// mod lesson_6_associated_types;
+
+mod lesson_7_threads;
 
 fn main() {
-    lesson_6_associated_types::run();
+    lesson_7_threads::run();
 }

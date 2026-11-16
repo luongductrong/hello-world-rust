@@ -76,7 +76,7 @@ Tham khảo tài liệu nâng cao:
 
 ## Chặng 7: Concurrency & Shared State — Đa luồng an toàn (Fearless Concurrency)
 
-- [ ] Buổi 7.1: Tạo OS Thread với `std::thread::spawn` + `move ||`, Marker Traits `Send` & `Sync` (cách Rust bảo đảm an toàn đa luồng ở compile-time, vì sao `Rc` bị chặn qua thread)
+- [x] Buổi 7.1: Tạo OS Thread với `std::thread::spawn` + `move ||`, Marker Traits `Send` & `Sync` (cách Rust bảo đảm an toàn đa luồng ở compile-time, vì sao `Rc` bị chặn qua thread) ([`src/lesson_7_threads.rs`](./src/lesson_7_threads.rs))
 - [ ] Buổi 7.2: Interior Mutability: Sự khác biệt giữa `RefCell` (single-thread) và `Mutex`/`RwLock` (multi-thread)
 - [ ] Buổi 7.3: Pattern chuẩn mực: `Arc<T>`, `Arc<Mutex<T>>` và `Arc<RwLock<T>>` (chia sẻ quyền sở hữu & cập nhật trạng thái chung giữa nhiều luồng đọc/ghi)
 
