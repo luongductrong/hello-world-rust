@@ -261,3 +261,41 @@
 
 - **Thứ tự hoàn thành bất định (Non-deterministic completion):**
   Các worker in log hoàn thành không theo thứ tự 1, 2, 3, 4 vì Hệ điều hành (OS Scheduler) điều phối các thread chạy song song độc lập trên các CPU core khác nhau.
+
+#### 6. Interior Mutability: Phá vỡ giới hạn tham chiếu bất biến (`&self`)
+
+- **Vấn đề thực tế:** Khi chia sẻ App State hay Cache, các hàm chỉ nhận tham chiếu mượn đọc bất biến `&self`. Nếu theo luật thường của Rust, ta không thể sửa đổi trạng thái bên trong.
+- **Bản chất Interior Mutability:** Vỏ bọc bên ngoài là bất biến (`&self`), nhưng kiểu dữ liệu bên trong (`RefCell`, `Mutex`, `RwLock`) cung cấp cơ chế an toàn để sửa đổi dữ liệu (mutate) lúc runtime.
+
+#### 7. `RefCell` (Đơn luồng) vs `Mutex` vs `RwLock` (Đa luồng)
+
+| Tiêu chí            | `RefCell<T>`                         | `Mutex<T>`                          | `RwLock<T>`                               |
+| :------------------ | :----------------------------------- | :---------------------------------- | :---------------------------------------- |
+| **Môi trường**      | **Đơn luồng** (Single-thread)        | **Đa luồng** (Multi-thread)         | **Đa luồng** (Multi-thread)               |
+| **Marker Traits**   | Không `Sync` (cấm truyền qua thread) | `Send + Sync` (nếu `T: Send`)       | `Send + Sync` (nếu `T: Send + Sync`)      |
+| **Khi xung đột**    | **Panic Crash runtime** ngay lập tức | **Block / Ngủ chờ** đến khi mở khóa | **Block / Ngủ chờ** khi có luồng ghi      |
+| **Cơ chế truy cập** | 1 ghi HOẶC nhiều đọc                 | 1 luồng độc quyền duy nhất          | **Nhiều luồng cùng đọc**, 1 ghi độc quyền |
+| **Tối ưu cho**      | Thao tác đơn luồng nhẹ nhàng         | Tác vụ ghi thường xuyên             | Tác vụ **Read-Heavy** (đọc áp đảo ghi)    |
+
+#### 8. Cơ chế Tự động Mở khóa RAII (Drop Guard) & Cạm bẫy Self-Deadlock
+
+- **RAII Auto-Unlock:** Khi gọi `.lock().unwrap()` hay `.write().unwrap()`, kết quả trả về là một `Guard` thông minh (`MutexGuard`, `RwLockWriteGuard`). Khi biến guard ra khỏi scope `{}` (hoặc gọi `drop(guard)`), Rust **tự động mở khóa 100%**, không bao giờ lo quên unlock như Java/C++.
+- **Cạm bẫy Tự khóa chết (Self-Deadlock):**
+  - Nếu trên cùng 1 thread, ta đang giữ `read()` guard mà lại gọi `write()` $\to$ Luồng ghi ngồi chờ luồng đọc kết thúc, nhưng luồng đọc lại không thể kết thúc vì thread đang bị block chờ luồng ghi $\to$ **Deadlock vĩnh viễn**!
+  - **Giải pháp:** Chủ động bọc scope `{ let _t = ...; }` hoặc gọi `drop(_t)` để nhả khóa đọc trước khi xin khóa ghi.
+
+#### 9. Các kinh nghiệm thực chiến đúc kết từ Buổi 7.2
+
+- **Kiểu trả về của `.borrow()`:** Trả về con trỏ thông minh `Ref<T>` (triển khai `Deref<Target = T>`) chứ không phải `T`, cho phép duyệt mượn trực tiếp mà không cần clone dữ liệu:
+  ```rust
+  for (i, log) in self.logs.borrow().iter().enumerate() { ... }
+  ```
+- **Kích nổ Panic của `RefCell` khi vi phạm Borrow Rules lúc Runtime:**
+  ```rust
+  let _r = logger.logs.borrow(); // Đang mượn đọc
+  logger.logs.borrow_mut().push(...); // PANIC CRASH: already borrowed: BorrowMutError
+  ```
+  Khác với compiler chặn lúc gõ code, lỗi này xảy ra khi chương trình đang chạy.
+- **Mẫu hình cập nhật an toàn với `Mutex` và `RwLock`:**
+  - `Mutex`: `*self.request_count.lock().unwrap() += 1;`
+  - `RwLock`: `*self.theme.write().unwrap() = new_theme.to_string();`

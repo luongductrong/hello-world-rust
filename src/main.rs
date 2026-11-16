@@ -20,8 +20,9 @@
 // mod lesson_6_lifetimes;
 // mod lesson_6_associated_types;
 
-mod lesson_7_threads;
+// mod lesson_7_threads;
+mod lesson_7_interior_mutability;
 
 fn main() {
-    lesson_7_threads::run();
+    lesson_7_interior_mutability::run();
 }
