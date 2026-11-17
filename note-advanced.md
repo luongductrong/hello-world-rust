@@ -374,3 +374,44 @@
 
 - **Pattern Matching có chủ đích:**
   Caller có thể dùng `if let Err(OrderError::InsufficientFunds { .. }) = result` để bắt đúng case cần đưa ra chỉ dẫn giao diện (UI Hint) cho người dùng.
+
+#### 4. `anyhow`: Vũ khí cho tầng Ứng dụng / Controller / Tauri Command
+
+- **Mục đích sử dụng:**
+  - Dành cho tầng **Application, API Handlers, CLI Commands, Main function** — nơi mà lập trình viên chỉ cần **gom tất cả mọi loại lỗi lại** để ghi log hoặc trả về response cho frontend/user mà không muốn định nghĩa enum cồng kềnh.
+- **Gom lỗi tự động bằng toán tử `?`:**
+  - `anyhow::Result<T>` là bí danh kiểu (type alias) cho `Result<T, anyhow::Error>`.
+  - Mọi kiểu lỗi cài đặt `std::error::Error` (kể cả enum do `thiserror` tạo ra hay lỗi từ thư viện `std`) đều được tự động chuyển đổi sang `anyhow::Error` khi dùng `?`.
+
+#### 5. Macro `bail!`, `ensure!` và Chuỗi ngữ cảnh (Context Chaining)
+
+- **`ensure!(condition, "...")`:**
+  - Kiểm tra điều kiện đầu vào. Nếu điều kiện `true` thì cho qua; nếu `false` thì lập tức ngắt hàm và ném lỗi `anyhow`.
+  - Tương đương: `if !condition { bail!("..."); }`.
+- **`bail!("...")`:**
+  - Ném lỗi tức thời mà không cần tạo enum (giống như `throw new Error(...)` trong JS/TS).
+- **Gắn ngữ cảnh với `.context()` và `.with_context()`:**
+  - `.context("Thông điệp tĩnh")`: Bổ sung thêm một lớp ngữ cảnh giải thích tại sao bước này thất bại.
+  - `.with_context(|| format!("..."))`: Đóng gói ngữ cảnh bằng closure (chỉ tốn chi phí format chuỗi KHI CÓ LỖI XẢY RA, tối ưu CPU/RAM).
+- **In chuỗi lỗi nhiều tầng:**
+  - `println!("{err}");`: Chỉ in lỗi lớp ngoài cùng.
+  - `println!("{err:#}");`: In toàn bộ chuỗi nguyên nhân (_Error Chain_) từ ngoài vào trong: `Lỗi cấp cao: Lỗi trung gian: Lỗi gốc OS`.
+  - `println!("{err:?}");`: In toàn bộ cây lỗi chi tiết kèm stacktrace.
+
+#### 6. Các kinh nghiệm thực chiến đúc kết từ Buổi 8.2
+
+- **Mô hình kiến trúc chuẩn kết hợp `thiserror` + `anyhow`:**
+  ```text
+  [Tauri UI / API Controller / Main]  <--- Dùng `anyhow` (Gom lỗi, gắn .context, ensure!, in {err:#})
+                  │
+                  ▼ (Gọi hàm)
+  [Domain Service / Core Logic / Lib] <--- Dùng `thiserror` (Tạo enum lỗi, phân loại chi tiết)
+  ```
+- **Hàm command điều phối ngắn gọn:**
+  ```rust
+  fn handle_checkout_command(...) -> anyhow::Result<()> {
+      load_user_profile(path).context("Bước 1: Tải thông tin người dùng thất bại")?;
+      checkout_cart(id, amount, balance).context("Bước 2: Xử lý giao dịch giỏ hàng thất bại")?;
+      Ok(())
+  }
+  ```

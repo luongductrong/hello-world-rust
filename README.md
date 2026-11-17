@@ -83,7 +83,7 @@ Tham khảo tài liệu nâng cao:
 ## Chặng 8: Chuẩn hóa Xử lý Lỗi Công nghiệp (`thiserror` & `anyhow`)
 
 - [x] Buổi 8.1: `thiserror` cho tầng Domain/Library logic — macro `#[derive(Error)]`, `#[error("...")]`, tự động hóa `Display` và `std::error::Error` mà không cần viết boilerplate ([`src/lesson_8_thiserror.rs`](./src/lesson_8_thiserror.rs))
-- [ ] Buổi 8.2: `anyhow` cho tầng Ứng dụng / API Handler — linh hoạt gom mọi kiểu lỗi với `anyhow::Result<T>`, bổ sung ngữ cảnh với `.context()` và ném lỗi tức thì với `bail!`
+- [x] Buổi 8.2: `anyhow` cho tầng Ứng dụng / API Handler — linh hoạt gom mọi kiểu lỗi với `anyhow::Result<T>`, bổ sung ngữ cảnh với `.context()` và ném lỗi tức thì với `bail!` ([`src/lesson_8_anyhow.rs`](./src/lesson_8_anyhow.rs))
 
 ## Chặng 9: Asynchronous Programming với Tokio Runtime
 

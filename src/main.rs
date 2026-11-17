@@ -24,8 +24,9 @@
 // mod lesson_7_interior_mutability;
 // mod lesson_7_shared_state;
 
-mod lesson_8_thiserror;
+// mod lesson_8_thiserror;
+mod lesson_8_anyhow;
 
 fn main() {
-    lesson_8_thiserror::run();
+    lesson_8_anyhow::run();
 }
