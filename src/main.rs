@@ -28,9 +28,10 @@
 // mod lesson_8_anyhow;
 
 // mod lesson_9_async_basics;
-mod lesson_9_tasks;
+// mod lesson_9_tasks;
+mod lesson_9_locks_and_blocking;
 
 #[tokio::main]
 async fn main() {
-    lesson_9_tasks::run().await;
+    lesson_9_locks_and_blocking::run().await;
 }

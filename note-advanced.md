@@ -482,3 +482,32 @@
   ```rust
   let result = handle.await.unwrap();
   ```
+
+#### 8. `tokio::sync::Mutex` vs `std::sync::Mutex` (Ranh giới `.await`)
+
+| Tiêu chí                  | `std::sync::Mutex` (Đồng bộ)                                           | `tokio::sync::Mutex` (Bất đồng bộ)                             |
+| :------------------------ | :--------------------------------------------------------------------- | :------------------------------------------------------------- |
+| **Cơ chế khóa**           | Khóa chặn OS Thread (**Blocking**).                                    | Khóa nhường luồng (**Non-blocking, awaitable**).               |
+| **Hiệu năng**             | Cực nhanh, zero-overhead cho RAM.                                      | Chậm hơn 1 chút do quản lý Future state.                       |
+| **Giữ khóa qua `.await`** | **CẤM:** Gây lỗi compile hoặc đóng băng toàn bộ thread pool của Tokio! | **ĐƯỢC:** Thiết kế riêng để an toàn khi giữ lock qua `.await`. |
+| **Khi nào nên dùng?**     | Cập nhật dữ liệu in-memory nhanh rồi nhả khóa ngay trước `.await`.     | Bắt buộc phải giữ khóa trong lúc gọi async network/I/O.        |
+
+#### 9. Giải cứu Event Loop với `tokio::task::spawn_blocking`
+
+- **Vấn đề CPU-Bound:** Các hàm nặng CPU (như băm mật khẩu Argon2, mã hóa AES, tính toán toán học lớn) hoặc I/O đồng bộ (`std::fs`) nếu chạy trong async fn sẽ chiếm dụng 100% CPU của worker thread, làm đơ Event Loop và giật lag UI Tauri.
+- **Giải pháp `spawn_blocking`:**
+  - Tokio cung cấp một Thread Pool riêng (tự co giãn đến 512 OS threads) chuyên trị các tác vụ blocking.
+  - Cú pháp:
+    ```rust
+    let result = tokio::task::spawn_blocking(move || {
+        heavy_cpu_computation()
+    }).await?;
+    ```
+  - Trong lúc thread pool blocking làm việc, các worker thread async chính vẫn phản hồi mượt mà từng mili-giây.
+
+#### 10. Các kinh nghiệm thực chiến đúc kết từ Buổi 9.3
+
+- **Hành vi tuần tự khi giữ lock qua `.await`:**
+  Nếu một hàm async giữ `tokio::sync::Mutex` trong suốt thời gian sleep/network, các task khác cùng xin khóa sẽ phải xếp hàng chờ đợi lần lượt, bảo vệ trạng thái tuyệt đối an toàn.
+- **Phối hợp `tokio::join!` giữa Ticker và Blocking Task:**
+  Cho phép chạy song song một async UI task nhẹ nhàng cùng lúc với một blocking CPU computation mà không hề có hiện tượng nghẽn luồng.
