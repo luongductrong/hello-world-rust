@@ -87,7 +87,7 @@ Tham khảo tài liệu nâng cao:
 
 ## Chặng 9: Asynchronous Programming với Tokio Runtime
 
-- [ ] Buổi 9.1: Tư duy Async Rust: `async fn`, `.await`, bản chất Pull-based/Lazy của trait `Future` (đối chiếu khác biệt triệt để với Eager Promise của JavaScript)
+- [x] Buổi 9.1: Tư duy Async Rust: `async fn`, `.await`, bản chất Pull-based/Lazy của trait `Future` (đối chiếu khác biệt triệt để với Eager Promise của JavaScript) ([`src/lesson_9_async_basics.rs`](./src/lesson_9_async_basics.rs))
 - [ ] Buổi 9.2: Tokio Runtime & macro `#[tokio::main]`, sinh async task với `tokio::spawn` (green threads) so sánh với OS thread
 - [ ] Buổi 9.3: Quản lý khóa và tác vụ nặng trong Async: `tokio::sync::Mutex` vs `std::sync::Mutex` (cạm bẫy deadlock khi giữ lock qua `.await`), giải phóng blocking I/O với `tokio::task::spawn_blocking`
 

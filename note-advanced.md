@@ -415,3 +415,40 @@
       Ok(())
   }
   ```
+
+---
+
+### Bài 9: Asynchronous Programming với Tokio Runtime
+
+#### 1. Tư duy Async Rust: Pull-based (Lazy) Future vs JS Eager Promise
+
+| Đặc tính | JavaScript `Promise` | Rust `Future` |
+| :--- | :--- | :--- |
+| **Bản chất** | **Eager (Chạy ngay):** Khởi tạo là chạy ngầm ngay lập tức, không cần `await`. | **Pull-based / Lazy:** Gọi hàm async chỉ tạo ra State Machine, **hoàn toàn chưa chạy** cho đến khi được `.await` hoặc poll. |
+| **Cơ chế** | Chạy trên Event Loop của V8/Node, tốn Heap và GC. | Không tốn Heap allocation mặc định (Zero-cost state machine). |
+| **Hủy tác vụ (Cancellation)** | Phức tạp (cần `AbortController`). | **Miễn phí:** Chỉ cần `drop(future)` là dừng ngay, dọn dẹp theo RAII. |
+
+#### 2. Cơ chế Hoạt động của `.await` & Tokio Event Loop
+
+- **`#[tokio::main]`:** Macro biến hàm `main` thành một Multi-threaded Work-stealing Thread Pool.
+- **Điểm dừng không nghẽn (`.await`):** Khi gặp `.await`, nếu tác vụ I/O chưa xong, task sẽ nhường (yield) thread CPU cho các task khác chạy. Khi có tín hiệu sẵn sàng, Tokio đánh thức task dậy chạy tiếp từ đúng điểm dừng.
+- **Quy tắc vàng:** **TUYỆT ĐỐI KHÔNG** gọi hàm blocking đồng bộ như `std::thread::sleep` trong async fn (sẽ làm đông cứng cả worker thread của Tokio!). Phải dùng `tokio::time::sleep`.
+
+#### 3. Chạy Đồng Thời Nhiều Future với `tokio::join!`
+
+- `tokio::join!(fut1, fut2, fut3)` tương đương `Promise.all` của JS:
+  - Cho phép chạy đồng thời nhiều future cùng lúc trên cùng một context.
+  - Tổng thời gian thực thi xấp xỉ bằng thời gian của **tác vụ lâu nhất** (thay vì cộng dồn tuần tự).
+
+#### 4. Các kinh nghiệm thực chiến đúc kết từ Buổi 9.1
+
+- **Đo thời gian với `Instant`:**
+  - `duration:?`: In ra chuỗi có sẵn đơn vị (ví dụ `154.4184ms`). Không cần thêm chữ `ms` vào sau chuỗi format nếu đã dùng debug format `:?`.
+  - `duration.as_millis()`: Lấy số nguyên mili-giây dạng `u128`.
+- **Kết hợp `tokio::join!` với toán tử `?` của `anyhow`:**
+  ```rust
+  let (res1, res2) = tokio::join!(task_1(), task_2());
+  let val1 = res1?;
+  let val2 = res2?;
+  ```
+

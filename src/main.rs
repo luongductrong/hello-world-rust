@@ -25,8 +25,11 @@
 // mod lesson_7_shared_state;
 
 // mod lesson_8_thiserror;
-mod lesson_8_anyhow;
+// mod lesson_8_anyhow;
 
-fn main() {
-    lesson_8_anyhow::run();
+mod lesson_9_async_basics;
+
+#[tokio::main]
+async fn main() {
+    lesson_9_async_basics::run().await;
 }
