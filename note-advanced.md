@@ -422,11 +422,11 @@
 
 #### 1. Tư duy Async Rust: Pull-based (Lazy) Future vs JS Eager Promise
 
-| Đặc tính | JavaScript `Promise` | Rust `Future` |
-| :--- | :--- | :--- |
-| **Bản chất** | **Eager (Chạy ngay):** Khởi tạo là chạy ngầm ngay lập tức, không cần `await`. | **Pull-based / Lazy:** Gọi hàm async chỉ tạo ra State Machine, **hoàn toàn chưa chạy** cho đến khi được `.await` hoặc poll. |
-| **Cơ chế** | Chạy trên Event Loop của V8/Node, tốn Heap và GC. | Không tốn Heap allocation mặc định (Zero-cost state machine). |
-| **Hủy tác vụ (Cancellation)** | Phức tạp (cần `AbortController`). | **Miễn phí:** Chỉ cần `drop(future)` là dừng ngay, dọn dẹp theo RAII. |
+| Đặc tính                      | JavaScript `Promise`                                                          | Rust `Future`                                                                                                               |
+| :---------------------------- | :---------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Bản chất**                  | **Eager (Chạy ngay):** Khởi tạo là chạy ngầm ngay lập tức, không cần `await`. | **Pull-based / Lazy:** Gọi hàm async chỉ tạo ra State Machine, **hoàn toàn chưa chạy** cho đến khi được `.await` hoặc poll. |
+| **Cơ chế**                    | Chạy trên Event Loop của V8/Node, tốn Heap và GC.                             | Không tốn Heap allocation mặc định (Zero-cost state machine).                                                               |
+| **Hủy tác vụ (Cancellation)** | Phức tạp (cần `AbortController`).                                             | **Miễn phí:** Chỉ cần `drop(future)` là dừng ngay, dọn dẹp theo RAII.                                                       |
 
 #### 2. Cơ chế Hoạt động của `.await` & Tokio Event Loop
 
@@ -452,3 +452,33 @@
   let val2 = res2?;
   ```
 
+#### 5. `tokio::spawn` vs `std::thread::spawn` (Green Tasks vs OS Threads)
+
+| Tiêu chí             | `std::thread::spawn` (OS Thread)                             | `tokio::spawn` (Async Green Task)                                                                                            |
+| :------------------- | :----------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **Bản chất**         | Kernel Thread do Hệ điều hành quản lý.                       | **Green Thread (Task)** do Tokio quản lý ở User Space.                                                                       |
+| **Kích thước Stack** | **~1MB - 2MB** mỗi thread.                                   | **Chỉ vài trăm Bytes** mỗi task!                                                                                             |
+| **Context Switch**   | Chuyển đổi qua lại giữa User Mode và Kernel Mode $\to$ Nặng. | Chuyển đổi nội bộ trong user space $\to$ Siêu nhẹ.                                                                           |
+| **Quy mô (Scale)**   | Vài ngàn thread là sập RAM hoặc chậm hệ thống.               | **Hàng chục ngàn đến 100.000+ tasks** chạy đồng thời mượt mà.                                                                |
+| **Mô hình thực thi** | 1 Thread = 1 OS Core Thread.                                 | **M:N Multi-threading:** Hàng trăm ngàn task (M) phân phối trên vài OS Worker Threads (N) bằng thuật toán **Work-Stealing**. |
+
+#### 6. Ràng buộc `T: Send + 'static` trong Async Tasks
+
+- **`T: Send`:** Vì Tokio có cơ chế Work-Stealing (chuyển task từ thread CPU này sang thread CPU khác khi rảnh việc), kiểu dữ liệu truyền vào task bắt buộc phải là `Send`.
+- **`T: 'static`:** Task chạy nền có thể sống lâu hơn scope của hàm cha sinh ra nó. Compiler cấm tiệt việc mượn tham chiếu ngắn hạn (`&'a str`) từ stack của hàm cha vào task:
+  ```rust
+  let local = String::from("cục bộ");
+  let slice = &local;
+  tokio::spawn(async move { println!("{slice}"); }); // LỖI: `local` does not live long enough
+  ```
+- **Chia sẻ dữ liệu vào nhiều tasks:** Tiếp tục dùng công thức chuẩn mực **`Arc<T>`**!
+
+#### 7. Các kinh nghiệm thực chiến đúc kết từ Buổi 9.2
+
+- **Hiệu năng xử lý đồng thời siêu khủng:**
+  1.000 tasks (mỗi task trễ 50-99ms), nếu chạy tuần tự mất $\approx 75$ giây. Nhưng chạy đồng thời qua `tokio::spawn` chỉ mất $\approx 115\text{ms}$!
+- **`JoinHandle` của Tokio là một Future:**
+  Kết quả trả về của `tokio::spawn` có thể `.await` không hề làm nghẽn OS thread:
+  ```rust
+  let result = handle.await.unwrap();
+  ```

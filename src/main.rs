@@ -27,9 +27,10 @@
 // mod lesson_8_thiserror;
 // mod lesson_8_anyhow;
 
-mod lesson_9_async_basics;
+// mod lesson_9_async_basics;
+mod lesson_9_tasks;
 
 #[tokio::main]
 async fn main() {
-    lesson_9_async_basics::run().await;
+    lesson_9_tasks::run().await;
 }
