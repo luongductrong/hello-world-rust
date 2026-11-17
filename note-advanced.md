@@ -312,7 +312,7 @@
 
 - **`Arc::clone(&state)`:**
   - Không hề nhân bản dữ liệu thật trên Heap.
-  - Chỉ thực hiện phép toán nguyên tử cấp CPU (*Atomic increment*) tăng bộ đếm lên `+1` và tạo ra một con trỏ thông minh mới trỏ tới cùng vùng nhớ. Chi phí cực kỳ nhẹ (chỉ vài nano-giây).
+  - Chỉ thực hiện phép toán nguyên tử cấp CPU (_Atomic increment_) tăng bộ đếm lên `+1` và tạo ra một con trỏ thông minh mới trỏ tới cùng vùng nhớ. Chi phí cực kỳ nhẹ (chỉ vài nano-giây).
   - Khi một thread hoàn thành, biến clone trong thread đó bị drop $\to$ bộ đếm tự động `-1`.
   - Khi bộ đếm về `0` $\to$ bộ nhớ Heap tự động được giải phóng hoàn toàn.
 - **`Arc::strong_count(&state)`:**
@@ -327,3 +327,50 @@
   Dù các giao dịch nạp và rút tiền từ 10 OS threads chạy xen kẽ bất định do Hệ điều hành lập lịch, dữ liệu số dư và danh sách lịch sử giao dịch không hề bị sai lệch hay mất mát dù chỉ 1 đồng.
 - **Cơ chế Poisoned Mutex (`PoisonError`):**
   Lý do ta luôn gọi `.lock().unwrap()`: Nếu một thread trước đó đang cầm lock mà bị `panic!`, Mutex sẽ bị đánh dấu là "nhiễm độc". Các thread sau gọi `.lock()` sẽ nhận về `Err(PoisonError)` để tránh tiếp tục thao tác trên dữ liệu đã bị lỗi dở dang.
+
+---
+
+### Bài 8: Chuẩn hóa Xử lý Lỗi Công nghiệp (`thiserror` & `anyhow`)
+
+#### 1. `thiserror`: Vũ khí cho tầng Domain / Core Logic / SDK
+
+- **Mục đích sử dụng:**
+  - Dành cho tầng **Domain Logic, Thư viện, SDK, Service Core** — nơi mà bên gọi (Caller / UI) **cần phân biệt chính xác loại lỗi** bằng `match` hoặc `if let` để xử lý theo từng kịch bản nghiệp vụ (ví dụ: thiếu tiền thì hiện nút nạp thêm, hết hàng thì báo liên hệ kho).
+  - Vì vậy, lỗi ở tầng này bắt buộc phải là **Enum**.
+- **Giải phóng Boilerplate:**
+  - Thay vì tự viết tay hàng chục dòng `impl Display`, `impl std::error::Error`, `impl From<T>`, `thiserror` sử dụng derive macro sinh code 100% tự động lúc compile, không tốn chút chi phí runtime nào (zero-cost).
+
+#### 2. Các Macro Cốt lõi của `thiserror`
+
+- **`#[derive(thiserror::Error, Debug)]`:** Kích hoạt tính năng tự sinh trait `Error` và `Display`.
+- **`#[error("...")]`:**
+  - Tự động sinh `impl Display`.
+  - Hỗ trợ nội suy vị trí: `{0}`, `{1}` đối với tuple enum.
+  - Hỗ trợ nội suy tên trường: `{field_name}` đối với struct enum.
+- **`#[from]`:**
+  - Tự động sinh `impl From<SourceError>` cho biến thể đó.
+  - Cho phép dùng toán tử `?` để tự động convert lỗi ngoại vi (như `std::io::Error`, `std::num::ParseIntError`) vào enum nghiệp vụ mà không cần gọi `.map_err()` thủ công.
+
+#### 3. Các kinh nghiệm thực chiến đúc kết từ Buổi 8.1
+
+- **Khai báo Enum lỗi chuẩn mực:**
+
+  ```rust
+  #[derive(thiserror::Error, Debug)]
+  pub enum OrderError {
+      #[error("Số lượng đặt hàng không hợp lệ: {0}")]
+      InvalidQuantity(u32),
+
+      #[error("Sản phẩm '{item_name}' hết hàng (còn {available})")]
+      OutOfStock { item_name: String, available: u32 },
+
+      #[error("Lỗi I/O: {0}")]
+      Io(#[from] std::io::Error),
+
+      #[error("Lỗi parse số: {0}")]
+      Parse(#[from] std::num::ParseIntError),
+  }
+  ```
+
+- **Pattern Matching có chủ đích:**
+  Caller có thể dùng `if let Err(OrderError::InsufficientFunds { .. }) = result` để bắt đúng case cần đưa ra chỉ dẫn giao diện (UI Hint) cho người dùng.
